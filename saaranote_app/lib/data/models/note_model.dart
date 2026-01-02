@@ -30,9 +30,9 @@ class NoteModel extends Note {
       id: map['id'] as int?,
       title: map['title'] as String,
       content: map['content'] as String,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-      updatedAt: DateTime.parse(map['updatedAt'] as String),
-      isArchived: (map['isArchived'] as int) == 1,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at'] as int),
+      isArchived: (map['is_archived'] as int) == 1,
       color: map['color'] as String?,
     );
   }
@@ -43,9 +43,9 @@ class NoteModel extends Note {
       if (id != null) 'id': id,
       'title': title,
       'content': content,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'isArchived': isArchived ? 1 : 0,
+      'created_at': createdAt.millisecondsSinceEpoch,
+      'updated_at': updatedAt.millisecondsSinceEpoch,
+      'is_archived': isArchived ? 1 : 0,
       if (color != null) 'color': color,
     };
   }

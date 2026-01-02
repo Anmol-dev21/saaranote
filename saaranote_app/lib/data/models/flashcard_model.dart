@@ -28,14 +28,14 @@ class FlashcardModel extends Flashcard {
   factory FlashcardModel.fromMap(Map<String, dynamic> map) {
     return FlashcardModel(
       id: map['id'] as int?,
-      noteId: map['noteId'] as int,
+      noteId: map['note_id'] as int,
       question: map['question'] as String,
       answer: map['answer'] as String,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-      lastReviewedAt: map['lastReviewedAt'] != null
-          ? DateTime.parse(map['lastReviewedAt'] as String)
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
+      lastReviewedAt: map['last_reviewed_at'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['last_reviewed_at'] as int)
           : null,
-      confidenceLevel: map['confidenceLevel'] as int,
+      confidenceLevel: map['confidence_level'] as int,
     );
   }
 
@@ -43,13 +43,13 @@ class FlashcardModel extends Flashcard {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
-      'noteId': noteId,
+      'note_id': noteId,
       'question': question,
       'answer': answer,
-      'createdAt': createdAt.toIso8601String(),
+      'created_at': createdAt.millisecondsSinceEpoch,
       if (lastReviewedAt != null)
-        'lastReviewedAt': lastReviewedAt!.toIso8601String(),
-      'confidenceLevel': confidenceLevel,
+        'last_reviewed_at': lastReviewedAt!.millisecondsSinceEpoch,
+      'confidence_level': confidenceLevel,
     };
   }
 

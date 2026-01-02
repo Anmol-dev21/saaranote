@@ -22,9 +22,9 @@ class SummaryModel extends Summary {
   factory SummaryModel.fromMap(Map<String, dynamic> map) {
     return SummaryModel(
       id: map['id'] as int?,
-      noteId: map['noteId'] as int,
-      summaryText: map['summaryText'] as String,
-      createdAt: DateTime.parse(map['createdAt'] as String),
+      noteId: map['note_id'] as int,
+      summaryText: map['summary_text'] as String,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
     );
   }
 
@@ -32,9 +32,9 @@ class SummaryModel extends Summary {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
-      'noteId': noteId,
-      'summaryText': summaryText,
-      'createdAt': createdAt.toIso8601String(),
+      'note_id': noteId,
+      'summary_text': summaryText,
+      'created_at': createdAt.millisecondsSinceEpoch,
     };
   }
 
