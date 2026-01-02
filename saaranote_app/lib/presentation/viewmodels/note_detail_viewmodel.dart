@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/note.dart';
-import '../../domain/entities/summary.dart';
+import '../../domain/entities/note_summary.dart';
 import '../../domain/entities/flashcard.dart';
 import '../../domain/usecases/get_note_by_id_usecase.dart';
 import '../../domain/usecases/get_summaries_for_note_usecase.dart';
@@ -22,14 +22,14 @@ class NoteDetailViewModel extends ChangeNotifier {
 
   // State
   Note? _note;
-  List<Summary> _summaries = [];
+  List<NoteSummary> _summaries = [];
   List<Flashcard> _flashcards = [];
   bool _isLoading = false;
   String? _errorMessage;
 
   // Getters
   Note? get note => _note;
-  List<Summary> get summaries => _summaries;
+  List<NoteSummary> get summaries => _summaries;
   List<Flashcard> get flashcards => _flashcards;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -73,7 +73,7 @@ class NoteDetailViewModel extends ChangeNotifier {
   }
 
   /// Get the most recent summary
-  Summary? get latestSummary {
+  NoteSummary? get latestSummary {
     if (_summaries.isEmpty) return null;
     return _summaries.first;
   }

@@ -1,23 +1,23 @@
-class Summary {
+class NoteSummary {
   final int? id;
   final int noteId;
   final String summaryText;
   final DateTime createdAt;
 
-  const Summary({
+  const NoteSummary({
     this.id,
     required this.noteId,
     required this.summaryText,
     required this.createdAt,
   });
 
-  Summary copyWith({
+  NoteSummary copyWith({
     int? id,
     int? noteId,
     String? summaryText,
     DateTime? createdAt,
   }) {
-    return Summary(
+    return NoteSummary(
       id: id ?? this.id,
       noteId: noteId ?? this.noteId,
       summaryText: summaryText ?? this.summaryText,

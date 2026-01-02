@@ -1,4 +1,4 @@
-import '../entities/summary.dart';
+import '../entities/note_summary.dart';
 import '../repositories/summary_repository.dart';
 
 /// Use case for retrieving summaries for a specific note
@@ -10,7 +10,7 @@ class GetSummariesForNoteUseCase {
   /// Execute the use case to retrieve summaries for a note
   /// 
   /// Returns a list of summaries for the specified note ID.
-  Future<List<Summary>> execute(int noteId) async {
+  Future<List<NoteSummary>> execute(int noteId) async {
     return await _summaryRepository.getByNoteId(noteId);
   }
 }

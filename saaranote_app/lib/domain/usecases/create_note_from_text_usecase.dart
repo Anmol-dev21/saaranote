@@ -1,5 +1,5 @@
 import '../entities/note.dart';
-import '../entities/summary.dart';
+import '../entities/note_summary.dart';
 import '../entities/flashcard.dart';
 import '../repositories/note_repository.dart';
 import '../repositories/summary_repository.dart';
@@ -53,13 +53,13 @@ class CreateNoteFromTextUseCase {
     final noteId = createdNote.id!;
 
     // Generate and save summary if enabled
-    Summary? createdSummary;
+    NoteSummary? createdSummary;
     if (params.generateSummary) {
       try {
         final summaryText = Summarizer.generateDetailedSummary(cleanedContent);
         
         if (summaryText.isNotEmpty) {
-          final summary = Summary(
+          final summary = NoteSummary(
             noteId: noteId,
             summaryText: summaryText,
             createdAt: now,
@@ -139,7 +139,7 @@ class CreateNoteFromTextParams {
 /// Result of creating a note with summaries and flashcards
 class CreateNoteResult {
   final Note note;
-  final Summary? summary;
+  final NoteSummary? summary;
   final List<Flashcard> flashcards;
 
   CreateNoteResult({

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/note.dart';
-import '../../domain/entities/summary.dart';
+import '../../domain/entities/note_summary.dart';
 import '../../domain/entities/flashcard.dart';
 import '../../domain/usecases/create_note_from_text_usecase.dart';
 import '../../domain/usecases/create_note_from_image_usecase.dart';
@@ -22,7 +22,7 @@ class CreateNoteViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   Note? _createdNote;
-  Summary? _createdSummary;
+  NoteSummary? _createdSummary;
   List<Flashcard> _createdFlashcards = [];
   String? _extractedText;
   int? _wordCount;
@@ -32,7 +32,7 @@ class CreateNoteViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasError => _errorMessage != null;
   Note? get createdNote => _createdNote;
-  Summary? get createdSummary => _createdSummary;
+  NoteSummary? get createdSummary => _createdSummary;
   List<Flashcard> get createdFlashcards => _createdFlashcards;
   String? get extractedText => _extractedText;
   int? get wordCount => _wordCount;

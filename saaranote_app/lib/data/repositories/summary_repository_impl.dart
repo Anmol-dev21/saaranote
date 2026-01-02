@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart';
-import '../../domain/entities/summary.dart';
+import '../../domain/entities/note_summary.dart';
 import '../../domain/repositories/summary_repository.dart';
 import '../datasources/local/database_helper.dart';
 import '../models/summary_model.dart';
@@ -12,7 +12,7 @@ class SummaryRepositoryImpl implements SummaryRepository {
   Future<Database> get _db async => await _databaseHelper.database;
 
   @override
-  Future<Summary> create(Summary summary) async {
+  Future<NoteSummary> create(NoteSummary summary) async {
     final db = await _db;
     final model = SummaryModel.fromEntity(summary);
     final id = await db.insert('summaries', model.toMap());
@@ -20,7 +20,7 @@ class SummaryRepositoryImpl implements SummaryRepository {
   }
 
   @override
-  Future<Summary?> getById(int id) async {
+  Future<NoteSummary?> getById(int id) async {
     final db = await _db;
     final maps = await db.query(
       'summaries',
@@ -33,7 +33,7 @@ class SummaryRepositoryImpl implements SummaryRepository {
   }
 
   @override
-  Future<List<Summary>> getByNoteId(int noteId) async {
+  Future<List<NoteSummary>> getByNoteId(int noteId) async {
     final db = await _db;
     final maps = await db.query(
       'summaries',
@@ -46,7 +46,7 @@ class SummaryRepositoryImpl implements SummaryRepository {
   }
 
   @override
-  Future<List<Summary>> getAll() async {
+  Future<List<NoteSummary>> getAll() async {
     final db = await _db;
     final maps = await db.query(
       'summaries',
@@ -57,7 +57,7 @@ class SummaryRepositoryImpl implements SummaryRepository {
   }
 
   @override
-  Future<Summary> update(Summary summary) async {
+  Future<NoteSummary> update(NoteSummary summary) async {
     final db = await _db;
     final model = SummaryModel.fromEntity(summary);
     

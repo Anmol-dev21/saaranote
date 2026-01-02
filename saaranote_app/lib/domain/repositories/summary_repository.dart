@@ -1,20 +1,20 @@
-import '../entities/summary.dart';
+import '../entities/note_summary.dart';
 
 abstract class SummaryRepository {
   /// Create a new summary for a note
-  Future<Summary> create(Summary summary);
+  Future<NoteSummary> create(NoteSummary summary);
 
   /// Get a summary by id
-  Future<Summary?> getById(int id);
+  Future<NoteSummary?> getById(int id);
 
   /// Get all summaries for a specific note
-  Future<List<Summary>> getByNoteId(int noteId);
+  Future<List<NoteSummary>> getByNoteId(int noteId);
 
   /// Get all summaries
-  Future<List<Summary>> getAll();
+  Future<List<NoteSummary>> getAll();
 
   /// Update an existing summary
-  Future<Summary> update(Summary summary);
+  Future<NoteSummary> update(NoteSummary summary);
 
   /// Delete a summary by id
   Future<void> delete(int id);

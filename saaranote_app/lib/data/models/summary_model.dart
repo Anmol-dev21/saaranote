@@ -1,6 +1,6 @@
-import '../../domain/entities/summary.dart';
+import '../../domain/entities/note_summary.dart';
 
-class SummaryModel extends Summary {
+class SummaryModel extends NoteSummary {
   const SummaryModel({
     super.id,
     required super.noteId,
@@ -9,7 +9,7 @@ class SummaryModel extends Summary {
   });
 
   /// Create SummaryModel from domain entity
-  factory SummaryModel.fromEntity(Summary summary) {
+  factory SummaryModel.fromEntity(NoteSummary summary) {
     return SummaryModel(
       id: summary.id,
       noteId: summary.noteId,
@@ -39,8 +39,8 @@ class SummaryModel extends Summary {
   }
 
   /// Convert SummaryModel to domain entity
-  Summary toEntity() {
-    return Summary(
+  NoteSummary toEntity() {
+    return NoteSummary(
       id: id,
       noteId: noteId,
       summaryText: summaryText,
