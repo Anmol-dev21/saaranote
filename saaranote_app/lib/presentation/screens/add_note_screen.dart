@@ -2,9 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../viewmodels/create_note_viewmodel.dart';
 
-/// Screen for adding a new note from text or image
+/// Screen for adding a new note from text, image, or PDF
 class AddNoteScreen extends StatefulWidget {
   const AddNoteScreen({super.key});
 
@@ -21,7 +22,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   bool _generateSummary = true;
   bool _generateFlashcards = true;
   File? _selectedImage;
-  int _selectedTab = 0; // 0 = text, 1 = image
+  File? _selectedPdf;
+  int _selectedTab = 0; // 0 = text, 1 = image, 2 = PDF
 
   @override
   void dispose() {
@@ -70,8 +72,10 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     
                     if (_selectedTab == 0) ...[
                       _buildTextInput(),
-                    ] else ...[
+                    ] else if (_selectedTab == 1) ...[
                       _buildImageInput(),
+                    ] else ...[
+                      _buildPdfInput(),
                     ],
                     
                     const SizedBox(height: 16),
@@ -113,6 +117,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               label: 'Image',
               isSelected: _selectedTab == 1,
               onTap: () => setState(() => _selectedTab = 1),
+            ),
+          ),
+          Expanded(
+            child: _buildTab(
+              icon: Icons.picture_as_pdf,
+              label: 'PDF',
+              isSelected: _selectedTab == 2,
+              onTap: () => setState(() => _selectedTab = 2),
             ),
           ),
         ],
@@ -265,6 +277,80 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     );
   }
 
+  Widget _buildPdfInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _titleController,
+          decoration: const InputDecoration(
+            labelText: 'Title (optional)',
+            hintText: 'Will be auto-generated if empty',
+            border: OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        const SizedBox(height: 16),
+        if (_selectedPdf != null) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf, color: Colors.blue, size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'PDF Selected',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _selectedPdf!.path.split('/').last,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  onPressed: () => setState(() => _selectedPdf = null),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          ElevatedButton.icon(
+            onPressed: _pickPdf,
+            icon: const Icon(Icons.upload_file),
+            label: const Text('Select PDF File'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Select a PDF file to extract text and create a note',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildOptions() {
     return Card(
       child: Padding(
@@ -343,6 +429,28 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     }
   }
 
+  Future<void> _pickPdf() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _selectedPdf = File(result.files.single.path!);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick PDF: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   Future<void> _saveNote() async {
     final viewModel = context.read<CreateNoteViewModel>();
 
@@ -363,7 +471,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           const SnackBar(content: Text('Note created successfully')),
         );
       }
-    } else {
+    } else if (_selectedTab == 1) {
       // Save from image
       if (_selectedImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -385,6 +493,32 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           SnackBar(
             content: Text(
               'Note created from image (${viewModel.wordCount} words extracted)',
+            ),
+          ),
+        );
+      }
+    } else {
+      // Save from PDF
+      if (_selectedPdf == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a PDF file')),
+        );
+        return;
+      }
+
+      final success = await viewModel.createNoteFromPdf(
+        pdfFile: _selectedPdf!,
+        title: _titleController.text.trim(),
+        generateSummary: _generateSummary,
+        generateFlashcards: _generateFlashcards,
+      );
+
+      if (success && mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Note created from PDF (${viewModel.wordCount} words extracted)',
             ),
           ),
         );
