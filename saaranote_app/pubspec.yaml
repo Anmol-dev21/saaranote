@@ -48,6 +48,9 @@ dependencies:
   # State management
   provider: ^6.1.2
   
+  # File picker
+  file_picker: ^8.1.4
+  
   # Image picker
   image_picker: ^1.1.2
 
