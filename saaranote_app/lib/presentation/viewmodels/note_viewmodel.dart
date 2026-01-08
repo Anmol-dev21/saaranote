@@ -4,6 +4,7 @@ import '../../domain/usecases/get_all_notes_usecase.dart';
 import '../../domain/usecases/get_note_by_id_usecase.dart';
 import '../../domain/usecases/update_note_usecase.dart';
 import '../../domain/usecases/delete_note_usecase.dart';
+import '../../domain/usecases/search_notes_usecase.dart';
 
 /// ViewModel for managing notes list and operations
 /// 
@@ -13,12 +14,14 @@ class NoteViewModel extends ChangeNotifier {
   final GetNoteByIdUseCase _getNoteByIdUseCase;
   final UpdateNoteUseCase _updateNoteUseCase;
   final DeleteNoteUseCase _deleteNoteUseCase;
+  final SearchNotesUseCase _searchNotesUseCase;
 
   NoteViewModel(
     this._getAllNotesUseCase,
     this._getNoteByIdUseCase,
     this._updateNoteUseCase,
     this._deleteNoteUseCase,
+    this._searchNotesUseCase,
   );
 
   // State
@@ -28,6 +31,12 @@ class NoteViewModel extends ChangeNotifier {
   NoteFilter _currentFilter = NoteFilter.active;
   NoteSortBy _currentSort = NoteSortBy.createdDateDesc;
   String? _searchQuery;
+
+  // Search-specific state
+  List<Note> _searchResults = [];
+  bool _isSearching = false;
+  String? _searchError;
+  String _currentSearchQuery = '';
 
   // Getters
   List<Note> get notes => _notes;
@@ -39,6 +48,15 @@ class NoteViewModel extends ChangeNotifier {
   NoteFilter get currentFilter => _currentFilter;
   NoteSortBy get currentSort => _currentSort;
   String? get searchQuery => _searchQuery;
+
+  // Search getters
+  List<Note> get searchResults => _searchResults;
+  bool get isSearching => _isSearching;
+  String? get searchError => _searchError;
+  bool get hasSearchError => _searchError != null;
+  bool get hasSearchResults => _searchResults.isNotEmpty;
+  int get searchResultCount => _searchResults.length;
+  String get currentSearchQuery => _currentSearchQuery;
 
   /// Fetch all notes with current filter and sort settings
   Future<void> fetchNotes() async {
@@ -96,6 +114,42 @@ class NoteViewModel extends ChangeNotifier {
       _searchQuery = null;
       await fetchNotes();
     }
+  }
+
+  /// Search notes using dedicated search use case
+  /// 
+  /// This method uses SearchNotesUseCase for optimized search
+  /// and maintains separate state from the main notes list
+  Future<void> searchNotes(String query) async {
+    _currentSearchQuery = query;
+    _isSearching = true;
+    _searchError = null;
+    notifyListeners();
+
+    try {
+      _searchResults = await _searchNotesUseCase.execute(query);
+      _isSearching = false;
+      notifyListeners();
+    } catch (e) {
+      _isSearching = false;
+      _searchError = 'Search failed: ${e.toString()}';
+      _searchResults = [];
+      notifyListeners();
+    }
+  }
+
+  /// Clear search results and reset search state
+  void clearSearchResults() {
+    _searchResults = [];
+    _currentSearchQuery = '';
+    _searchError = null;
+    notifyListeners();
+  }
+
+  /// Clear search error
+  void clearSearchError() {
+    _searchError = null;
+    notifyListeners();
   }
 
   /// Get a specific note by ID
