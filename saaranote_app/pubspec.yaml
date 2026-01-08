@@ -48,6 +48,9 @@ dependencies:
   # PDF generation
   pdf: ^3.11.1
   
+  # Google Fonts for typography (compatible with pdf_text)
+  google_fonts: ^4.0.4
+  
   # State management
   provider: ^6.1.2
   

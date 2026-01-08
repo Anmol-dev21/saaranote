@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Design system
+import 'core/design_system/app_theme.dart';
+
 // Data layer
 import 'data/datasources/local/database_helper.dart';
 import 'data/repositories/note_repository_impl.dart';
@@ -23,11 +26,14 @@ import 'domain/usecases/search_notes_usecase.dart';
 import 'core/services/ocr_service.dart';
 import 'core/services/pdf_export_service.dart';
 import 'core/services/pdf_text_service.dart';
+import 'core/services/rich_text_service.dart';
+import 'core/services/drawing_service.dart';
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
 import 'presentation/viewmodels/create_note_viewmodel.dart';
 import 'presentation/viewmodels/note_detail_viewmodel.dart';
+import 'presentation/viewmodels/note_editor_viewmodel.dart';
 import 'presentation/screens/home_screen.dart';
 
 void main() {
@@ -51,6 +57,8 @@ class MyApp extends StatelessWidget {
     final ocrService = OcrService();
     final pdfExportService = PdfExportService();
     final pdfTextService = PdfTextService();
+    final richTextService = RichTextService();
+    final drawingService = DrawingService();
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -109,24 +117,19 @@ class MyApp extends StatelessWidget {
             pdfExportService,
           ),
         ),
-      ],
-      child: MaterialApp(
-        title: 'Saaranote',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-          ),
-          cardTheme: CardThemeData(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+        ChangeNotifierProvider(
+          create: (_) => NoteEditorViewModel(
+            richTextService,
+            drawingService,
           ),
         ),
+      ],
+      child: MaterialApp(
+        title: 'SaaraNote',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme(),
+        darkTheme: AppTheme.darkTheme(),
+        themeMode: ThemeMode.system,
         home: const HomeScreen(),
       ),
     );

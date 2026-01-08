@@ -30,7 +30,7 @@ class NoteViewModel extends ChangeNotifier {
   String? _errorMessage;
   NoteFilter _currentFilter = NoteFilter.active;
   NoteSortBy _currentSort = NoteSortBy.createdDateDesc;
-  String? _searchQuery;
+  String _searchQuery = '';
 
   // Search-specific state
   List<Note> _searchResults = [];
@@ -47,7 +47,7 @@ class NoteViewModel extends ChangeNotifier {
   int get noteCount => _notes.length;
   NoteFilter get currentFilter => _currentFilter;
   NoteSortBy get currentSort => _currentSort;
-  String? get searchQuery => _searchQuery;
+  String get searchQuery => _searchQuery;
 
   // Search getters
   List<Note> get searchResults => _searchResults;
@@ -104,36 +104,43 @@ class NoteViewModel extends ChangeNotifier {
 
   /// Set search query and reload notes
   Future<void> search(String? query) async {
-    _searchQuery = query?.trim();
+    _searchQuery = query?.trim() ?? '';
     await fetchNotes();
   }
 
   /// Clear search query
   Future<void> clearSearch() async {
-    if (_searchQuery != null) {
-      _searchQuery = null;
+    if (_searchQuery.isNotEmpty) {
+      _searchQuery = '';
       await fetchNotes();
     }
   }
 
   /// Search notes using dedicated search use case
   /// 
-  /// This method uses SearchNotesUseCase for optimized search
-  /// and maintains separate state from the main notes list
+  /// Updates the main notes list with search results.
+  /// If query is empty, falls back to loading all notes.
+  /// Handles loading and error states.
   Future<void> searchNotes(String query) async {
-    _currentSearchQuery = query;
-    _isSearching = true;
-    _searchError = null;
+    _searchQuery = query.trim();
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      _searchResults = await _searchNotesUseCase.execute(query);
-      _isSearching = false;
-      notifyListeners();
+      if (_searchQuery.isEmpty) {
+        // Fall back to loading all notes when query is empty
+        await fetchNotes();
+      } else {
+        // Execute search and update main notes list
+        _notes = await _searchNotesUseCase.execute(_searchQuery);
+        _isLoading = false;
+        notifyListeners();
+      }
     } catch (e) {
-      _isSearching = false;
-      _searchError = 'Search failed: ${e.toString()}';
-      _searchResults = [];
+      _isLoading = false;
+      _errorMessage = 'Search failed: ${e.toString()}';
+      _notes = [];
       notifyListeners();
     }
   }

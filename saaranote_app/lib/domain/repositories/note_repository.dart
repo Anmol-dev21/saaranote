@@ -29,5 +29,5 @@ abstract class NoteRepository {
   Future<Note> unarchive(int id);
 
   /// Search notes by title or content
-  Future<List<Note>> search(String query);
+  Future<List<Note>> searchNotes(String query);
 }
