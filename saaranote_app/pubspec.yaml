@@ -42,6 +42,9 @@ dependencies:
   # OCR - On-device text recognition
   google_mlkit_text_recognition: ^0.13.1
   
+  # PDF generation
+  pdf: ^3.11.1
+  
   # State management
   provider: ^6.1.2
   
