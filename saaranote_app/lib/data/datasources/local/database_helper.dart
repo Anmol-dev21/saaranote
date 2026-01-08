@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Incremented from 1 to 2 for advanced content support
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -41,7 +41,10 @@ class DatabaseHelper {
         created_at $integerType,
         updated_at $integerType,
         is_archived $integerType DEFAULT 0,
-        color $textNullableType
+        color $textNullableType,
+        rich_content $textNullableType,
+        drawing_ids $textNullableType,
+        content_type $textNullableType DEFAULT 'plain'
       )
     ''');
 
@@ -80,10 +83,30 @@ class DatabaseHelper {
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     // Handle database migrations here when version changes
-    // Example:
-    // if (oldVersion < 2) {
-    //   await db.execute('ALTER TABLE notes ADD COLUMN new_field TEXT');
-    // }
+    
+    // Version 1 -> 2: Add advanced note content support (rich text, drawings)
+    if (oldVersion < 2) {
+      // Add new columns for rich content support
+      // All columns are nullable to maintain backward compatibility
+      await db.execute('ALTER TABLE notes ADD COLUMN rich_content TEXT');
+      await db.execute('ALTER TABLE notes ADD COLUMN drawing_ids TEXT');
+      await db.execute("ALTER TABLE notes ADD COLUMN content_type TEXT DEFAULT 'plain'");
+      
+      // Create drawings table for storing drawing stroke data
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS drawings (
+          id TEXT PRIMARY KEY,
+          note_id INTEGER NOT NULL,
+          drawing_data TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
+        )
+      ''');
+      
+      // Create index for drawing lookups
+      await db.execute('CREATE INDEX idx_drawings_note_id ON drawings(note_id)');
+    }
   }
 
   Future<void> close() async {
