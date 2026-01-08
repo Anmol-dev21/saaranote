@@ -8,20 +8,21 @@ import 'data/repositories/summary_repository_impl.dart';
 import 'data/repositories/flashcard_repository_impl.dart';
 
 // Domain layer
-import 'domain/repositories/note_repository.dart';
-import 'domain/repositories/summary_repository.dart';
-import 'domain/repositories/flashcard_repository.dart';
 import 'domain/usecases/get_all_notes_usecase.dart';
 import 'domain/usecases/get_note_by_id_usecase.dart';
 import 'domain/usecases/update_note_usecase.dart';
 import 'domain/usecases/delete_note_usecase.dart';
 import 'domain/usecases/create_note_from_text_usecase.dart';
 import 'domain/usecases/create_note_from_image_usecase.dart';
+import 'domain/usecases/create_note_from_pdf_usecase.dart';
 import 'domain/usecases/get_summaries_for_note_usecase.dart';
 import 'domain/usecases/get_flashcards_for_note_usecase.dart';
+import 'domain/usecases/search_notes_usecase.dart';
 
 // Core services
 import 'core/services/ocr_service.dart';
+import 'core/services/pdf_export_service.dart';
+import 'core/services/pdf_text_service.dart';
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
@@ -48,6 +49,8 @@ class MyApp extends StatelessWidget {
     
     // Services
     final ocrService = OcrService();
+    final pdfExportService = PdfExportService();
+    final pdfTextService = PdfTextService();
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -69,8 +72,15 @@ class MyApp extends StatelessWidget {
       flashcardRepository,
       ocrService,
     );
+    final createNoteFromPdfUseCase = CreateNoteFromPdfUseCase(
+      noteRepository,
+      summaryRepository,
+      flashcardRepository,
+      pdfTextService,
+    );
     final getSummariesForNoteUseCase = GetSummariesForNoteUseCase(summaryRepository);
     final getFlashcardsForNoteUseCase = GetFlashcardsForNoteUseCase(flashcardRepository);
+    final searchNotesUseCase = SearchNotesUseCase(noteRepository);
 
     return MultiProvider(
       providers: [
@@ -81,12 +91,14 @@ class MyApp extends StatelessWidget {
             getNoteByIdUseCase,
             updateNoteUseCase,
             deleteNoteUseCase,
+            searchNotesUseCase,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => CreateNoteViewModel(
             createNoteFromTextUseCase,
             createNoteFromImageUseCase,
+            createNoteFromPdfUseCase,
           ),
         ),
         ChangeNotifierProvider(
@@ -94,6 +106,7 @@ class MyApp extends StatelessWidget {
             getNoteByIdUseCase,
             getSummariesForNoteUseCase,
             getFlashcardsForNoteUseCase,
+            pdfExportService,
           ),
         ),
       ],

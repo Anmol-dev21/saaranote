@@ -5,17 +5,20 @@ import '../../domain/entities/note_summary.dart';
 import '../../domain/entities/flashcard.dart';
 import '../../domain/usecases/create_note_from_text_usecase.dart';
 import '../../domain/usecases/create_note_from_image_usecase.dart';
+import '../../domain/usecases/create_note_from_pdf_usecase.dart';
 
-/// ViewModel for creating notes from text or images
+/// ViewModel for creating notes from text, images, or PDF files
 /// 
 /// Uses MVVM pattern with ChangeNotifier for state management
 class CreateNoteViewModel extends ChangeNotifier {
   final CreateNoteFromTextUseCase _createNoteFromTextUseCase;
   final CreateNoteFromImageUseCase _createNoteFromImageUseCase;
+  final CreateNoteFromPdfUseCase _createNoteFromPdfUseCase;
 
   CreateNoteViewModel(
     this._createNoteFromTextUseCase,
     this._createNoteFromImageUseCase,
+    this._createNoteFromPdfUseCase,
   );
 
   // State
@@ -128,6 +131,51 @@ class CreateNoteViewModel extends ChangeNotifier {
     }
   }
 
+  /// Create a note from a PDF file
+  Future<bool> createNoteFromPdf({
+    required File pdfFile,
+    String title = '',
+    String? color,
+    bool generateSummary = true,
+    bool generateFlashcards = true,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _createdNote = null;
+    _createdSummary = null;
+    _createdFlashcards = [];
+    _extractedText = null;
+    _wordCount = null;
+    notifyListeners();
+
+    try {
+      final params = CreateNoteFromPdfParams(
+        pdfFile: pdfFile,
+        title: title,
+        color: color,
+        generateSummary: generateSummary,
+        generateFlashcards: generateFlashcards,
+      );
+
+      final result = await _createNoteFromPdfUseCase.execute(params);
+
+      _createdNote = result.note;
+      _createdSummary = result.summary;
+      _createdFlashcards = result.flashcards;
+      _extractedText = result.extractedText;
+      _wordCount = result.wordCount;
+      _isLoading = false;
+      notifyListeners();
+
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Failed to create note from PDF: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Clear the current state
   void clear() {
     _isLoading = false;
@@ -155,7 +203,7 @@ class CreateNoteViewModel extends ChangeNotifier {
       'summaryCreated': _createdSummary != null,
       'flashcardsCreated': _createdFlashcards.length,
       'wordCount': _wordCount,
-      'extractedFromImage': _extractedText != null,
+      'extractedText': _extractedText != null,
     };
   }
 }

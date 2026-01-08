@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/note_summary.dart';
@@ -5,6 +6,7 @@ import '../../domain/entities/flashcard.dart';
 import '../../domain/usecases/get_note_by_id_usecase.dart';
 import '../../domain/usecases/get_summaries_for_note_usecase.dart';
 import '../../domain/usecases/get_flashcards_for_note_usecase.dart';
+import '../../core/services/pdf_export_service.dart';
 
 /// ViewModel for viewing a single note with its details
 /// 
@@ -13,11 +15,13 @@ class NoteDetailViewModel extends ChangeNotifier {
   final GetNoteByIdUseCase _getNoteByIdUseCase;
   final GetSummariesForNoteUseCase _getSummariesForNoteUseCase;
   final GetFlashcardsForNoteUseCase _getFlashcardsForNoteUseCase;
+  final PdfExportService _pdfExportService;
 
   NoteDetailViewModel(
     this._getNoteByIdUseCase,
     this._getSummariesForNoteUseCase,
     this._getFlashcardsForNoteUseCase,
+    this._pdfExportService,
   );
 
   // State
@@ -26,6 +30,8 @@ class NoteDetailViewModel extends ChangeNotifier {
   List<Flashcard> _flashcards = [];
   bool _isLoading = false;
   String? _errorMessage;
+  File? _exportedPdfFile;
+  bool _isExporting = false;
 
   // Getters
   Note? get note => _note;
@@ -39,6 +45,9 @@ class NoteDetailViewModel extends ChangeNotifier {
   bool get hasFlashcards => _flashcards.isNotEmpty;
   int get summaryCount => _summaries.length;
   int get flashcardCount => _flashcards.length;
+  File? get exportedPdfFile => _exportedPdfFile;
+  bool get isExporting => _isExporting;
+  bool get hasPdfExport => _exportedPdfFile != null;
 
   /// Load note details including summaries and flashcards
   Future<void> loadNoteDetails(int noteId) async {
@@ -85,6 +94,8 @@ class NoteDetailViewModel extends ChangeNotifier {
     _flashcards = [];
     _isLoading = false;
     _errorMessage = null;
+    _exportedPdfFile = null;
+    _isExporting = false;
     notifyListeners();
   }
 
@@ -92,6 +103,40 @@ class NoteDetailViewModel extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Export the current note as PDF
+  Future<void> exportNoteAsPdf() async {
+    if (_note == null) {
+      _errorMessage = 'No note loaded to export';
+      notifyListeners();
+      return;
+    }
+
+    _isExporting = true;
+    _errorMessage = null;
+    _exportedPdfFile = null;
+    notifyListeners();
+
+    try {
+      // Get the latest summary if available
+      final summary = latestSummary;
+
+      // Export note to PDF
+      _exportedPdfFile = await _pdfExportService.exportNoteToPdf(
+        _note!,
+        summary: summary,
+        flashcards: _flashcards.isNotEmpty ? _flashcards : null,
+      );
+
+      _isExporting = false;
+      notifyListeners();
+    } catch (e) {
+      _isExporting = false;
+      _errorMessage = 'Failed to export PDF: ${e.toString()}';
+      _exportedPdfFile = null;
+      notifyListeners();
+    }
   }
 
   /// Get note statistics

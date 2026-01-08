@@ -50,116 +50,117 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSearchBar(context),
           Expanded(
             child: Consumer<NoteViewModel>(
-        builder: (context, viewModel, child) {
-          if (viewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+              builder: (context, viewModel, child) {
+                if (viewModel.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          if (viewModel.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    viewModel.errorMessage ?? 'An error occurred',
-                    style: const TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => viewModel.refresh(),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (!viewModel.hasNotes) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.note_add_outlined,
-                    size: 100,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No notes yet',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap + to create your first note',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => viewModel.refresh(),
-            child: ListView.builder(
-              itemCount: viewModel.noteCount,
-              padding: const EdgeInsets.all(8),
-              itemBuilder: (context, index) {
-                final note = viewModel.notes[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  child: ListTile(
-                    title: Text(
-                      note.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                if (viewModel.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 4),
+                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
                         Text(
-                          note.content,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          viewModel.errorMessage ?? 'An error occurred',
+                          style: const TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => viewModel.refresh(),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (!viewModel.hasNotes) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.note_add_outlined,
+                          size: 100,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
                         Text(
-                          _formatDate(note.updatedAt),
+                          'No notes yet',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 20,
                             color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap + to create your first note',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
                           ),
                         ),
                       ],
                     ),
-                    leading: CircleAvatar(
-                      backgroundColor: note.color != null
-                          ? _parseColor(note.color!)
-                          : Theme.of(context).primaryColor,
-                      child: const Icon(Icons.note, color: Colors.white),
-                    ),
-                    trailing: _buildNoteActions(context, note.id!, viewModel),
-                    onTap: () => _navigateToDetail(context, note.id!),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () => viewModel.refresh(),
+                  child: ListView.builder(
+                    itemCount: viewModel.noteCount,
+                    padding: const EdgeInsets.all(8),
+                    itemBuilder: (context, index) {
+                      final note = viewModel.notes[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        child: ListTile(
+                          title: Text(
+                            note.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                note.content,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatDate(note.updatedAt),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: note.color != null
+                                ? _parseColor(note.color!)
+                                : Theme.of(context).primaryColor,
+                            child: const Icon(Icons.note, color: Colors.white),
+                          ),
+                          trailing: _buildNoteActions(context, note.id!, viewModel),
+                          onTap: () => _navigateToDetail(context, note.id!),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
             ),
-          );
-        },
-      ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

@@ -31,6 +31,24 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       appBar: AppBar(
         title: const Text('Note Details'),
         actions: [
+          Consumer<NoteDetailViewModel>(
+            builder: (context, viewModel, child) {
+              return IconButton(
+                icon: viewModel.isExporting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf),
+                onPressed: viewModel.isExporting ? null : () => _handleExportPdf(context),
+                tooltip: 'Export as PDF',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => context.read<NoteDetailViewModel>().refresh(),
@@ -246,6 +264,50 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _handleExportPdf(BuildContext context) async {
+    final viewModel = context.read<NoteDetailViewModel>();
+    
+    // Call the viewmodel to export PDF
+    await viewModel.exportNoteAsPdf();
+    
+    // Show success or error message
+    if (!mounted) return;
+    
+    if (viewModel.hasError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(viewModel.errorMessage ?? 'Failed to export PDF'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else if (viewModel.hasPdfExport) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('PDF exported successfully'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Widget _buildSection({
