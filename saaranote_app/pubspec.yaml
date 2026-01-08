@@ -45,6 +45,9 @@ dependencies:
   # PDF text extraction
   pdf_text: ^0.5.0
   
+  # PDF generation
+  pdf: ^3.11.1
+  
   # State management
   provider: ^6.1.2
   

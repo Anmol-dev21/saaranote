@@ -8,9 +8,6 @@ import 'data/repositories/summary_repository_impl.dart';
 import 'data/repositories/flashcard_repository_impl.dart';
 
 // Domain layer
-import 'domain/repositories/note_repository.dart';
-import 'domain/repositories/summary_repository.dart';
-import 'domain/repositories/flashcard_repository.dart';
 import 'domain/usecases/get_all_notes_usecase.dart';
 import 'domain/usecases/get_note_by_id_usecase.dart';
 import 'domain/usecases/update_note_usecase.dart';
@@ -23,6 +20,7 @@ import 'domain/usecases/search_notes_usecase.dart';
 
 // Core services
 import 'core/services/ocr_service.dart';
+import 'core/services/pdf_export_service.dart';
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
@@ -49,6 +47,7 @@ class MyApp extends StatelessWidget {
     
     // Services
     final ocrService = OcrService();
+    final pdfExportService = PdfExportService();
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -97,6 +96,7 @@ class MyApp extends StatelessWidget {
             getNoteByIdUseCase,
             getSummariesForNoteUseCase,
             getFlashcardsForNoteUseCase,
+            pdfExportService,
           ),
         ),
       ],
