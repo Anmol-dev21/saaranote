@@ -6,6 +6,7 @@ import '../../core/design_system/app_colors.dart';
 import '../viewmodels/note_viewmodel.dart';
 import '../../domain/usecases/get_all_notes_usecase.dart';
 import 'add_note_screen.dart';
+import 'note_editor_screen.dart';
 import 'note_detail_screen.dart';
 
 /// Home screen displaying the list of notes
@@ -112,10 +113,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddNote(context),
-        tooltip: 'Create Note',
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'editor',
+            onPressed: () => _navigateToNoteEditor(context),
+            tooltip: 'New Note (Rich Text & Drawing)',
+            child: const Icon(Icons.draw),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            heroTag: 'add',
+            onPressed: () => _navigateToAddNote(context),
+            tooltip: 'Quick Add (OCR/PDF)',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -258,6 +272,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (created == true) {
         context.read<NoteViewModel>().refresh();
       }
+    });
+  }
+
+  void _navigateToNoteEditor(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NoteEditorScreen()),
+    ).then((_) {
+      context.read<NoteViewModel>().refresh();
     });
   }
 

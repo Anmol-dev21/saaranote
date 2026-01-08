@@ -26,11 +26,14 @@ import 'domain/usecases/search_notes_usecase.dart';
 import 'core/services/ocr_service.dart';
 import 'core/services/pdf_export_service.dart';
 import 'core/services/pdf_text_service.dart';
+import 'core/services/rich_text_service.dart';
+import 'core/services/drawing_service.dart';
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
 import 'presentation/viewmodels/create_note_viewmodel.dart';
 import 'presentation/viewmodels/note_detail_viewmodel.dart';
+import 'presentation/viewmodels/note_editor_viewmodel.dart';
 import 'presentation/screens/home_screen.dart';
 
 void main() {
@@ -54,6 +57,8 @@ class MyApp extends StatelessWidget {
     final ocrService = OcrService();
     final pdfExportService = PdfExportService();
     final pdfTextService = PdfTextService();
+    final richTextService = RichTextService();
+    final drawingService = DrawingService();
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -110,6 +115,12 @@ class MyApp extends StatelessWidget {
             getSummariesForNoteUseCase,
             getFlashcardsForNoteUseCase,
             pdfExportService,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NoteEditorViewModel(
+            richTextService,
+            drawingService,
           ),
         ),
       ],
