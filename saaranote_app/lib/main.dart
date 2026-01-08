@@ -19,6 +19,7 @@ import 'domain/usecases/create_note_from_text_usecase.dart';
 import 'domain/usecases/create_note_from_image_usecase.dart';
 import 'domain/usecases/get_summaries_for_note_usecase.dart';
 import 'domain/usecases/get_flashcards_for_note_usecase.dart';
+import 'domain/usecases/search_notes_usecase.dart';
 
 // Core services
 import 'core/services/ocr_service.dart';
@@ -71,6 +72,7 @@ class MyApp extends StatelessWidget {
     );
     final getSummariesForNoteUseCase = GetSummariesForNoteUseCase(summaryRepository);
     final getFlashcardsForNoteUseCase = GetFlashcardsForNoteUseCase(flashcardRepository);
+    final searchNotesUseCase = SearchNotesUseCase(noteRepository);
 
     return MultiProvider(
       providers: [
@@ -81,6 +83,7 @@ class MyApp extends StatelessWidget {
             getNoteByIdUseCase,
             updateNoteUseCase,
             deleteNoteUseCase,
+            searchNotesUseCase,
           ),
         ),
         ChangeNotifierProvider(
