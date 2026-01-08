@@ -125,8 +125,14 @@ class NoteRepositoryImpl implements NoteRepository {
   }
 
   @override
-  Future<List<Note>> search(String query) async {
+  Future<List<Note>> searchNotes(String query) async {
     final db = await _db;
+    
+    // Handle empty query by returning all notes
+    if (query.trim().isEmpty) {
+      return await getAll();
+    }
+    
     final searchPattern = '%$query%';
     
     final maps = await db.query(

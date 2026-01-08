@@ -20,6 +20,6 @@ class SearchNotesUseCase {
     }
 
     // Delegate search to repository
-    return await _noteRepository.search(query);
+    return await _noteRepository.searchNotes(query);
   }
 }
