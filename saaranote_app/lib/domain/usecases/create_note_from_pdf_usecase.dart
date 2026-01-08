@@ -101,8 +101,8 @@ class CreateNoteFromPdfUseCase {
         for (final pair in flashcardPairs) {
           final flashcard = Flashcard(
             noteId: noteId,
-            question: pair.question,
-            answer: pair.answer,
+            question: pair['question']!,
+            answer: pair['answer']!,
             createdAt: now,
           );
           final created = await _flashcardRepository.create(flashcard);
