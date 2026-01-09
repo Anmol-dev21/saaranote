@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3, // Incremented from 2 to 3 for file organization support
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -41,7 +41,10 @@ class DatabaseHelper {
         created_at $integerType,
         updated_at $integerType,
         is_archived $integerType DEFAULT 0,
-        color $textNullableType
+        color $textNullableType,
+        rich_content $textNullableType,
+        drawing_ids $textNullableType,
+        content_type $textNullableType DEFAULT 'plain'
       )
     ''');
 
@@ -76,14 +79,120 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_summaries_note_id ON summaries(note_id)');
     await db.execute(
         'CREATE INDEX idx_flashcards_note_id ON flashcards(note_id)');
+
+    // File metadata table (for file organization system)
+    if (version >= 3) {
+      await db.execute('''
+        CREATE TABLE file_metadata (
+          id $idType,
+          file_path $textType UNIQUE,
+          file_name $textType,
+          file_type $integerType,
+          subject $textNullableType,
+          created_at $integerType,
+          last_modified $integerType,
+          file_size $integerType,
+          related_note_id $textNullableType,
+          organization_status $integerType DEFAULT 0,
+          custom_folder $textNullableType,
+          tags $textNullableType
+        )
+      ''');
+
+      // Organization rules table
+      await db.execute('''
+        CREATE TABLE organization_rules (
+          id $textType PRIMARY KEY,
+          name $textType,
+          subject_pattern $textNullableType,
+          file_type $integerType,
+          target_folder $textType,
+          priority $integerType DEFAULT 0,
+          is_enabled $integerType DEFAULT 1
+        )
+      ''');
+
+      // Create indexes for file organization
+      await db.execute('CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)');
+      await db.execute('CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)');
+      await db.execute('CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)');
+      await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
+      await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
+    }
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     // Handle database migrations here when version changes
-    // Example:
-    // if (oldVersion < 2) {
-    //   await db.execute('ALTER TABLE notes ADD COLUMN new_field TEXT');
-    // }
+    
+    // Version 1 -> 2: Add advanced note content support (rich text, drawings)
+    if (oldVersion < 2) {
+      // Add new columns for rich content support
+      // All columns are nullable to maintain backward compatibility
+      await db.execute('ALTER TABLE notes ADD COLUMN rich_content TEXT');
+      await db.execute('ALTER TABLE notes ADD COLUMN drawing_ids TEXT');
+      await db.execute("ALTER TABLE notes ADD COLUMN content_type TEXT DEFAULT 'plain'");
+      
+      // Create drawings table for storing drawing stroke data
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS drawings (
+          id TEXT PRIMARY KEY,
+          note_id INTEGER NOT NULL,
+          drawing_data TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
+        )
+      ''');
+      
+      // Create index for drawing lookups
+      await db.execute('CREATE INDEX idx_drawings_note_id ON drawings(note_id)');
+    }
+
+    // Version 2 -> 3: Add file organization system
+    if (oldVersion < 3) {
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+      const textNullableType = 'TEXT';
+      const integerType = 'INTEGER NOT NULL';
+
+      // Create file metadata table
+      await db.execute('''
+        CREATE TABLE file_metadata (
+          id $idType,
+          file_path $textType UNIQUE,
+          file_name $textType,
+          file_type $integerType,
+          subject $textNullableType,
+          created_at $integerType,
+          last_modified $integerType,
+          file_size $integerType,
+          related_note_id $textNullableType,
+          organization_status $integerType DEFAULT 0,
+          custom_folder $textNullableType,
+          tags $textNullableType
+        )
+      ''');
+
+      // Create organization rules table
+      await db.execute('''
+        CREATE TABLE organization_rules (
+          id $textType PRIMARY KEY,
+          name $textType,
+          subject_pattern $textNullableType,
+          file_type $integerType,
+          target_folder $textType,
+          priority $integerType DEFAULT 0,
+          is_enabled $integerType DEFAULT 1
+        )
+      ''');
+
+      // Create indexes for file organization queries
+      await db.execute('CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)');
+      await db.execute('CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)');
+      await db.execute('CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)');
+      await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
+      await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
+    }
   }
 
   Future<void> close() async {

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/design_system/app_components.dart';
+import '../../core/design_system/app_spacing.dart';
+import '../../core/design_system/app_colors.dart';
 import '../viewmodels/note_viewmodel.dart';
 import '../../domain/usecases/get_all_notes_usecase.dart';
 import 'add_note_screen.dart';
+import 'note_editor_screen.dart';
 import 'note_detail_screen.dart';
 
 /// Home screen displaying the list of notes
@@ -39,74 +43,43 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saaranote'),
+        title: const Text('SaaraNote'),
         actions: [
           _buildFilterDropdown(context),
-          const SizedBox(width: 8),
+          AppSpacing.hGapSm,
         ],
       ),
       body: Column(
         children: [
-          _buildSearchBar(context),
+          Padding(
+            padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
+            child: _buildSearchBar(context),
+          ),
           Expanded(
             child: Consumer<NoteViewModel>(
               builder: (context, viewModel, child) {
                 if (viewModel.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const AppLoadingIndicator(message: 'Loading notes...');
                 }
 
                 if (viewModel.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          viewModel.errorMessage ?? 'An error occurred',
-                          style: const TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => viewModel.refresh(),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
-                        ),
-                      ],
+                  return AppEmptyState(
+                    icon: Icons.error_outline,
+                    title: 'Oops!',
+                    message: viewModel.errorMessage ?? 'An error occurred',
+                    action: ElevatedButton.icon(
+                      onPressed: () => viewModel.refresh(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
                     ),
                   );
                 }
 
                 if (!viewModel.hasNotes) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.note_add_outlined,
-                          size: 100,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No notes yet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap + to create your first note',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
+                  return AppEmptyState(
+                    icon: Icons.note_add_outlined,
+                    title: 'No notes yet',
+                    message: 'Tap the + button to create your first note',
                   );
                 }
 
@@ -114,42 +87,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   onRefresh: () => viewModel.refresh(),
                   child: ListView.builder(
                     itemCount: viewModel.noteCount,
-                    padding: const EdgeInsets.all(8),
+                    padding: AppSpacing.pagePadding.add(AppSpacing.verticalSm),
                     itemBuilder: (context, index) {
                       final note = viewModel.notes[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        child: ListTile(
-                          title: Text(
-                            note.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                note.content,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatDate(note.updatedAt),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
+                      return Padding(
+                        padding: AppSpacing.verticalSm,
+                        child: AppListCard(
+                          title: note.title,
+                          subtitle: '${note.content}\n${_formatDate(note.updatedAt)}',
                           leading: CircleAvatar(
                             backgroundColor: note.color != null
                                 ? _parseColor(note.color!)
-                                : Theme.of(context).primaryColor,
-                            child: const Icon(Icons.note, color: Colors.white),
+                                : Theme.of(context).colorScheme.primary,
+                            child: const Icon(Icons.note, color: Colors.white, size: 20),
                           ),
                           trailing: _buildNoteActions(context, note.id!, viewModel),
                           onTap: () => _navigateToDetail(context, note.id!),
@@ -163,52 +113,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddNote(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'editor',
+            onPressed: () => _navigateToNoteEditor(context),
+            tooltip: 'New Note (Rich Text & Drawing)',
+            child: const Icon(Icons.draw),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            heroTag: 'add',
+            onPressed: () => _navigateToAddNote(context),
+            tooltip: 'Quick Add (OCR/PDF)',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        decoration: InputDecoration(
-          hintText: 'Search notes...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey[800]
-              : Colors.grey[100],
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-      ),
+    return AppSearchBar(
+      controller: _searchController,
+      hintText: 'Search notes...',
+      onChanged: _onSearchChanged,
+      onClear: () => _onSearchChanged(''),
     );
   }
 
@@ -268,35 +199,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNoteActions(BuildContext context, int noteId, NoteViewModel viewModel) {
-    return PopupMenuButton<String>(
+    return IconButton(
       icon: const Icon(Icons.more_vert),
-      onSelected: (value) async {
-        switch (value) {
-          case 'delete':
-            final confirm = await _showDeleteConfirmation(context);
-            if (confirm == true && context.mounted) {
-              final success = await viewModel.deleteNote(noteId);
-              if (success && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Note deleted')),
-                );
-              }
+      iconSize: AppSpacing.iconMd,
+      onPressed: () async {
+        final value = await showMenu<String>(
+          context: context,
+          position: RelativeRect.fromLTRB(
+            MediaQuery.of(context).size.width,
+            kToolbarHeight,
+            0,
+            0,
+          ),
+          items: [
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, color: AppColors.errorLight, size: AppSpacing.iconMd),
+                  AppSpacing.hGapSm,
+                  Text('Delete', style: TextStyle(color: AppColors.errorLight)),
+                ],
+              ),
+            ),
+          ],
+        );
+        
+        if (value == 'delete' && context.mounted) {
+          final confirm = await _showDeleteConfirmation(context);
+          if (confirm == true && context.mounted) {
+            final success = await viewModel.deleteNote(noteId);
+            if (success && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Note deleted'),
+                  backgroundColor: AppColors.successLight,
+                ),
+              );
             }
-            break;
+          }
         }
       },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Delete', style: TextStyle(color: Colors.red)),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -329,6 +272,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (created == true) {
         context.read<NoteViewModel>().refresh();
       }
+    });
+  }
+
+  void _navigateToNoteEditor(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NoteEditorScreen()),
+    ).then((_) {
+      context.read<NoteViewModel>().refresh();
     });
   }
 
