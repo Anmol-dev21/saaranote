@@ -392,6 +392,6 @@ This project is developed as a portfolio demonstration.
 
 ---
 
-**Developer**: Anmol Kumar  
+**Developer**: Anmol Bhargav  
 **Repository**: [github.com/Anmol-dev21/saaranote](https://github.com/Anmol-dev21/saaranote)  
 **Built With**: Flutter • Dart • SQLite • Google ML Kit
