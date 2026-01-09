@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // Incremented from 1 to 2 for advanced content support
+      version: 3, // Incremented from 2 to 3 for file organization support
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -79,6 +79,46 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_summaries_note_id ON summaries(note_id)');
     await db.execute(
         'CREATE INDEX idx_flashcards_note_id ON flashcards(note_id)');
+
+    // File metadata table (for file organization system)
+    if (version >= 3) {
+      await db.execute('''
+        CREATE TABLE file_metadata (
+          id $idType,
+          file_path $textType UNIQUE,
+          file_name $textType,
+          file_type $integerType,
+          subject $textNullableType,
+          created_at $integerType,
+          last_modified $integerType,
+          file_size $integerType,
+          related_note_id $textNullableType,
+          organization_status $integerType DEFAULT 0,
+          custom_folder $textNullableType,
+          tags $textNullableType
+        )
+      ''');
+
+      // Organization rules table
+      await db.execute('''
+        CREATE TABLE organization_rules (
+          id $textType PRIMARY KEY,
+          name $textType,
+          subject_pattern $textNullableType,
+          file_type $integerType,
+          target_folder $textType,
+          priority $integerType DEFAULT 0,
+          is_enabled $integerType DEFAULT 1
+        )
+      ''');
+
+      // Create indexes for file organization
+      await db.execute('CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)');
+      await db.execute('CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)');
+      await db.execute('CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)');
+      await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
+      await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
+    }
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -106,6 +146,52 @@ class DatabaseHelper {
       
       // Create index for drawing lookups
       await db.execute('CREATE INDEX idx_drawings_note_id ON drawings(note_id)');
+    }
+
+    // Version 2 -> 3: Add file organization system
+    if (oldVersion < 3) {
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+      const textNullableType = 'TEXT';
+      const integerType = 'INTEGER NOT NULL';
+
+      // Create file metadata table
+      await db.execute('''
+        CREATE TABLE file_metadata (
+          id $idType,
+          file_path $textType UNIQUE,
+          file_name $textType,
+          file_type $integerType,
+          subject $textNullableType,
+          created_at $integerType,
+          last_modified $integerType,
+          file_size $integerType,
+          related_note_id $textNullableType,
+          organization_status $integerType DEFAULT 0,
+          custom_folder $textNullableType,
+          tags $textNullableType
+        )
+      ''');
+
+      // Create organization rules table
+      await db.execute('''
+        CREATE TABLE organization_rules (
+          id $textType PRIMARY KEY,
+          name $textType,
+          subject_pattern $textNullableType,
+          file_type $integerType,
+          target_folder $textType,
+          priority $integerType DEFAULT 0,
+          is_enabled $integerType DEFAULT 1
+        )
+      ''');
+
+      // Create indexes for file organization queries
+      await db.execute('CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)');
+      await db.execute('CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)');
+      await db.execute('CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)');
+      await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
+      await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
     }
   }
 
