@@ -415,10 +415,16 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         imageQuality: 85,
       );
 
-      if (pickedFile != null) {
+      if (pickedFile != null && pickedFile.path.isNotEmpty) {
         setState(() {
           _selectedImage = File(pickedFile.path);
         });
+      } else if (pickedFile != null && pickedFile.path.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to access image file path')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -437,10 +443,16 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         allowMultiple: false,
       );
 
-      if (result != null && result.files.single.path != null) {
+      if (result != null && result.files.single.path != null && result.files.single.path!.isNotEmpty) {
         setState(() {
           _selectedPdf = File(result.files.single.path!);
         });
+      } else if (result != null && (result.files.single.path == null || result.files.single.path!.isEmpty)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to access PDF file path')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
