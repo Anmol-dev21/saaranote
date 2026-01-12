@@ -72,11 +72,13 @@ class ChatRepositoryImpl implements ChatRepository {
     final db = await _databaseHelper.database;
     final model = ChatMessageModel.fromEntity(message);
 
+    // Insert message
     final messageId = await db.insert('chat_messages', {
       'session_id': sessionId,
       ...model.toMap(),
     });
 
+    // Insert sources if present
     if (message.sources != null) {
       for (final source in message.sources!) {
         await db.insert('message_sources', {
@@ -88,6 +90,7 @@ class ChatRepositoryImpl implements ChatRepository {
       }
     }
 
+    // Update session timestamp
     await db.update(
       'chat_sessions',
       {'updated_at': message.timestamp.millisecondsSinceEpoch},
@@ -101,6 +104,7 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<List<ChatMessage>> getMessages(int sessionId) async {
     final db = await _databaseHelper.database;
+
     final results = await db.query(
       'chat_messages',
       where: 'session_id = ?',
@@ -113,9 +117,12 @@ class ChatRepositoryImpl implements ChatRepository {
     for (final row in results) {
       final messageId = row['id'] as int;
 
+      // Load sources for this message
       final sourcesResults = await db.rawQuery('''
-        SELECT
-          ms.*, fm.file_name, dc.content
+        SELECT 
+          ms.*,
+          fm.file_name,
+          dc.content
         FROM message_sources ms
         JOIN file_metadata fm ON ms.file_metadata_id = fm.id
         JOIN document_chunks dc ON ms.chunk_id = dc.id

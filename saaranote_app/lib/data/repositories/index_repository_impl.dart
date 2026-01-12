@@ -1,5 +1,3 @@
-import 'package:sqflite/sqflite.dart';
-
 import '../../domain/entities/document_chunk.dart';
 import '../../domain/entities/retrieval_result.dart';
 import '../../domain/repositories/index_repository.dart';
@@ -72,38 +70,22 @@ class IndexRepositoryImpl implements IndexRepository {
   Future<List<RetrievalResult>> keywordSearch(String query, int limit) async {
     final db = await _databaseHelper.database;
 
-    List<Map<String, Object?>> results;
-    try {
-      results = await db.rawQuery('''
-        SELECT 
-          dc.id,
-          dc.file_metadata_id,
-          dc.chunk_index,
-          dc.content,
-          dc.token_count,
-          dc.created_at,
-          bm25(document_chunks_fts) as score
-        FROM document_chunks_fts
-        JOIN document_chunks dc ON document_chunks_fts.rowid = dc.id
-        WHERE document_chunks_fts MATCH ?
-        ORDER BY score DESC
-        LIMIT ?
-      ''', [query, limit]);
-    } on DatabaseException {
-      results = await db.rawQuery('''
-        SELECT 
-          id,
-          file_metadata_id,
-          chunk_index,
-          content,
-          token_count,
-          created_at
-        FROM document_chunks
-        WHERE content LIKE ?
-        ORDER BY created_at DESC
-        LIMIT ?
-      ''', ['%$query%', limit]);
-    }
+    // Use SQLite FTS5 with BM25 ranking
+    final results = await db.rawQuery('''
+      SELECT 
+        dc.id,
+        dc.file_metadata_id,
+        dc.chunk_index,
+        dc.content,
+        dc.token_count,
+        dc.created_at,
+        bm25(document_chunks_fts) as score
+      FROM document_chunks_fts
+      JOIN document_chunks dc ON document_chunks_fts.rowid = dc.id
+      WHERE document_chunks_fts MATCH ?
+      ORDER BY score DESC
+      LIMIT ?
+    ''', [query, limit]);
 
     return results.map((row) {
       final chunk = DocumentChunk(
@@ -115,9 +97,8 @@ class IndexRepositoryImpl implements IndexRepository {
         createdAt: DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int),
       );
 
-        final score = row['score'] is num
-          ? (row['score'] as num).toDouble().abs()
-          : 0.0;
+      // BM25 scores are negative, take absolute value for relevance
+      final score = (row['score'] as num).toDouble().abs();
 
       return RetrievalResult(
         chunk: chunk,

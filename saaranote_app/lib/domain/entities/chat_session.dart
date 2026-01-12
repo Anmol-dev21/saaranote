@@ -1,10 +1,10 @@
-/// Chat session entity
+/// Entity representing a chat conversation session
 class ChatSession {
   final int? id;
   final String title;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final String? tags;
+  final List<String>? tags;
 
   const ChatSession({
     this.id,
@@ -19,7 +19,7 @@ class ChatSession {
     String? title,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? tags,
+    List<String>? tags,
   }) {
     return ChatSession(
       id: id ?? this.id,

@@ -1,4 +1,4 @@
-/// Document chunk entity for retrieval indexing
+/// Entity representing a text chunk from a document
 class DocumentChunk {
   final int? id;
   final int fileMetadataId;
