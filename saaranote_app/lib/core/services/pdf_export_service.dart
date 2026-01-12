@@ -81,14 +81,25 @@ class PdfExportService {
       ),
     );
 
-    // Save to temporary directory
-    final tempDir = await getTemporaryDirectory();
-    final fileName = _sanitizeFileName(note.title);
-    final file = File('${tempDir.path}/$fileName.pdf');
-    
-    await file.writeAsBytes(await pdf.save());
-    
-    return file;
+    // Save to temporary directory with fallback
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final fileName = _sanitizeFileName(note.title);
+      final file = File('${tempDir.path}/$fileName.pdf');
+      
+      await file.writeAsBytes(await pdf.save());
+      
+      return file;
+    } catch (e) {
+      // Fallback to app documents directory if temp directory fails
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = _sanitizeFileName(note.title);
+      final file = File('${appDir.path}/$fileName.pdf');
+      
+      await file.writeAsBytes(await pdf.save());
+      
+      return file;
+    }
   }
 
   /// Build title section

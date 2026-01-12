@@ -49,7 +49,13 @@ import 'presentation/viewmodels/chat_viewmodel.dart';
 import 'presentation/viewmodels/settings_viewmodel.dart';
 import 'presentation/screens/home_screen.dart';
 
-void main() {
+void main() async {
+  // Initialize Flutter binding before any async operations
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Pre-initialize database to avoid race conditions
+  await DatabaseHelper.instance.database;
+  
   runApp(const MyApp());
 }
 
