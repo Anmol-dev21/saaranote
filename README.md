@@ -32,9 +32,35 @@ SaaraNote follows **Clean Architecture** principles with clear separation of con
 
 This architecture ensures maintainability, testability, and scalability while keeping the codebase organized and easy to understand.
 
+### Documentation
+
+Comprehensive architecture and feature documentation is available in the [`saaranote_app/docs/`](saaranote_app/docs/) directory, including:
+
+- Design System guidelines
+- Offline AI Chat Architecture (1700+ lines)
+- Rich Text & Drawing UI implementation
+- File Organization System
+- Advanced Note Foundation
+
 ## Screenshots
 
 *Coming soon*
+
+## Testing
+
+SaaraNote includes a comprehensive test suite covering all major functionality:
+
+- **334 total tests** across 8 testing phases
+- **100% pass rate** ensuring code quality
+- Tests cover: Core functionality, search, flashcards, PDF export, offline mode, UI stability, and data safety
+
+```bash
+# Run all tests
+flutter test
+
+# Run specific test phase
+flutter test test/phase2_functional_test.dart
+```
 
 ## Getting Started
 
@@ -76,11 +102,19 @@ saaranote/
 ├── README.md                 # This file
 └── saaranote_app/           # Flutter application
     ├── lib/
-    │   ├── core/            # Utilities and services
+    │   ├── core/            # Utilities, services, design system
     │   ├── data/            # Repositories and data sources
     │   ├── domain/          # Business logic and entities
-    │   └── presentation/    # UI and ViewModels
-    └── README.md            # App-specific documentation
+    │   └── presentation/    # UI, ViewModels, and widgets
+    ├── docs/                # Architecture documentation
+    │   ├── README.md        # Documentation index
+    │   ├── DESIGN_SYSTEM.md
+    │   ├── OFFLINE_AI_CHAT_ARCHITECTURE.md
+    │   └── [more docs...]
+    ├── test/                # Comprehensive test suite (334 tests)
+    │   ├── integration/     # Integration tests
+    │   └── [test files...]
+    └── README.md            # Detailed app documentation
 ```
 
 ## Author
