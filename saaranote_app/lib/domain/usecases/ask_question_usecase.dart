@@ -82,9 +82,11 @@ class AskQuestionUseCase {
 class AskQuestionParams {
   final String question;
   final int sessionId;
+  final List<int>? scopedNoteIds;
 
   const AskQuestionParams({
     required this.question,
     required this.sessionId,
+    this.scopedNoteIds,
   });
 }
