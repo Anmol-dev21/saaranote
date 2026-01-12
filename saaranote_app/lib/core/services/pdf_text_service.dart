@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:pdf_text/pdf_text.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 /// Service for extracting text from PDF files
 class PdfTextService {
@@ -9,28 +9,32 @@ class PdfTextService {
   /// Returns an empty string if extraction fails or PDF has no text.
   Future<String> extractTextFromPdf(File pdfFile) async {
     try {
-      // Create PDF document from file
-      final pdfDocument = await PDFDoc.fromFile(pdfFile);
+      // Load PDF document from file bytes
+      final bytes = await pdfFile.readAsBytes();
+      final pdfDocument = PdfDocument(inputBytes: bytes);
       
       // Get total number of pages
-      final pageCount = pdfDocument.length;
+      final pageCount = pdfDocument.pages.count;
       
       if (pageCount == 0) {
+        pdfDocument.dispose();
         return '';
       }
       
       // Extract text from all pages
       final textBuffer = StringBuffer();
       
-      for (int pageNum = 1; pageNum <= pageCount; pageNum++) {
+      for (int pageNum = 0; pageNum < pageCount; pageNum++) {
         try {
-          final pageText = await pdfDocument.pageAt(pageNum).text;
+          // Extract text using PdfTextExtractor
+          final PdfTextExtractor extractor = PdfTextExtractor(pdfDocument);
+          final pageText = extractor.extractText(startPageIndex: pageNum, endPageIndex: pageNum);
           
           if (pageText.isNotEmpty) {
             textBuffer.write(pageText);
             
             // Add page separator if not the last page
-            if (pageNum < pageCount) {
+            if (pageNum < pageCount - 1) {
               textBuffer.write('\n\n');
             }
           }
@@ -39,6 +43,9 @@ class PdfTextService {
           continue;
         }
       }
+      
+      // Dispose the document
+      pdfDocument.dispose();
       
       return textBuffer.toString().trim();
     } catch (e) {

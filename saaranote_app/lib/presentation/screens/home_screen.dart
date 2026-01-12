@@ -175,28 +175,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFilterMenu(BuildContext context) {
-    return PopupMenuButton<NoteFilter>(
-      icon: const Icon(Icons.filter_list),
-      onSelected: (filter) {
-        context.read<NoteViewModel>().setFilter(filter);
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: NoteFilter.active,
-          child: Text('Active'),
-        ),
-        const PopupMenuItem(
-          value: NoteFilter.all,
-          child: Text('All'),
-        ),
-        const PopupMenuItem(
-          value: NoteFilter.archived,
-          child: Text('Archived'),
-        ),
-      ],
-    );
-  }
+  // TODO: Implement filter functionality
+  // Widget _buildFilterMenu(BuildContext context) {
+  //   return PopupMenuButton<NoteFilter>(
+  //     icon: const Icon(Icons.filter_list),
+  //     onSelected: (filter) {
+  //       context.read<NoteViewModel>().setFilter(filter);
+  //     },
+  //     itemBuilder: (context) => [
+  //       const PopupMenuItem(
+  //         value: NoteFilter.active,
+  //         child: Text('Active'),
+  //       ),
+  //       const PopupMenuItem(
+  //         value: NoteFilter.all,
+  //         child: Text('All'),
+  //       ),
+  //       const PopupMenuItem(
+  //         value: NoteFilter.archived,
+  //         child: Text('Archived'),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildNoteActions(BuildContext context, int noteId, NoteViewModel viewModel) {
     return IconButton(

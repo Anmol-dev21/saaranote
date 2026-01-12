@@ -44,12 +44,12 @@ dependencies:
   google_mlkit_text_recognition: ^0.13.1
   
   # PDF text extraction
-  pdf_text: ^0.5.0
+  syncfusion_flutter_pdf: ^28.1.40
   
   # PDF generation
   pdf: ^3.11.1
   
-  # Google Fonts for typography (compatible with pdf_text)
+  # Google Fonts for typography
   google_fonts: ^4.0.4
   
   # State management
