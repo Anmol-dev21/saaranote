@@ -74,20 +74,27 @@ SaaraNote is designed as an offline-first study companion that helps students an
 ```
 lib/
 ├── core/
-│   ├── services/          # External services (OCR, PDF)
-│   └── utils/            # Helper utilities (TextProcessor, Summarizer)
+│   ├── design_system/    # Design tokens (colors, typography, spacing)
+│   ├── services/         # External services (OCR, PDF, AI chat)
+│   └── utils/           # Helper utilities (TextProcessor, Summarizer)
 ├── data/
-│   ├── datasources/      # SQLite database operations
-│   ├── models/           # Data models
-│   └── repositories/     # Repository implementations
+│   ├── datasources/     # SQLite database operations
+│   ├── models/          # Data models
+│   └── repositories/    # Repository implementations
 ├── domain/
-│   ├── entities/         # Business entities (Note, Flashcard, Summary)
-│   ├── repositories/     # Repository contracts
-│   └── usecases/         # Business logic use cases
+│   ├── entities/        # Business entities (Note, Flashcard, Summary)
+│   ├── repositories/    # Repository contracts
+│   └── usecases/        # Business logic use cases
 └── presentation/
-    ├── screens/          # UI screens
-    └── viewmodels/       # State management (MVVM)
+    ├── screens/         # UI screens
+    ├── viewmodels/      # State management (MVVM)
+    └── widgets/         # Reusable UI components
+
+docs/                    # Architecture & feature documentation
+test/                    # Comprehensive test suite (334 tests)
 ```
+
+> **📖 Detailed documentation available in [`docs/`](docs/) directory**
 
 ### Key Design Patterns
 
