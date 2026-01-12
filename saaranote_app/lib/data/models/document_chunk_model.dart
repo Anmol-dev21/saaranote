@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../../domain/entities/document_chunk.dart';
 
 /// Data model for DocumentChunk with database serialization

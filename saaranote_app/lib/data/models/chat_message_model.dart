@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../../domain/entities/chat_message.dart';
 
 /// Data model for ChatMessage with database serialization
