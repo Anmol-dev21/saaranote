@@ -1,11 +1,39 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class OcrService {
   Future<String> extractTextFromImage(File imageFile) async {
     try {
       final inputImage = InputImage.fromFile(imageFile);
-      final textRecognizer = TextRecognizer();
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final recognizedText = await textRecognizer.processImage(inputImage);
+      await textRecognizer.close();
+      return recognizedText.text;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  Future<String> extractTextFromImageBytes(
+    Uint8List bytes,
+    int width,
+    int height, {
+    InputImageRotation rotation = InputImageRotation.rotation0deg,
+  }) async {
+    try {
+      final inputImage = InputImage.fromBytes(
+        bytes: bytes,
+        metadata: InputImageMetadata(
+          size: Size(width.toDouble(), height.toDouble()),
+          rotation: rotation,
+          format: InputImageFormat.bgra8888,
+          bytesPerRow: width * 4,
+        ),
+      );
+
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
       final recognizedText = await textRecognizer.processImage(inputImage);
       await textRecognizer.close();
       return recognizedText.text;

@@ -345,19 +345,19 @@ class NoteEditorViewModel extends ChangeNotifier {
 
   /// Undo last stroke
   void undo() {
-    if (_currentStrokes.isEmpty) return;
-    
+    if (_undoStack.isEmpty) return;
+
     _redoStack.add(List.from(_currentStrokes));
-    _currentStrokes.removeLast();
+    _currentStrokes = _undoStack.removeLast();
     notifyListeners();
   }
 
   /// Redo last undone stroke
   void redo() {
     if (_redoStack.isEmpty) return;
-    
-    final strokes = _redoStack.removeLast();
-    _currentStrokes = strokes;
+
+    _undoStack.add(List.from(_currentStrokes));
+    _currentStrokes = _redoStack.removeLast();
     notifyListeners();
   }
 

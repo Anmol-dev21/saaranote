@@ -1,0 +1,7 @@
+# ninja log v5
+1	50	1775044967216151975	CMakeFiles/bbhelper.dir/c++/directBufferAndroid.cpp.o	8cf390b746361db
+50	75	1775044967241151974	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/x86_64/libbbhelper.so	c3cb16b04e8e9635
+2	125	1775045456852133030	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/x86_64/libbbhelper.so	c3cb16b04e8e9635
+2	101	1775045980151112782	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/x86_64/libbbhelper.so	c3cb16b04e8e9635
+5	115	1775046531261091459	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/x86_64/libbbhelper.so	c3cb16b04e8e9635
+16	118	1775047704241046073	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/x86_64/libbbhelper.so	c3cb16b04e8e9635

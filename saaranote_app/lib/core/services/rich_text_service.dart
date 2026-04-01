@@ -56,6 +56,7 @@ class RichTextService {
 
     // Split and merge spans as needed
     final newSpans = <TextSpan>[];
+    bool applied = false;
     
     for (final span in content.spans) {
       if (span.end <= start || span.start >= end) {
@@ -68,20 +69,28 @@ class RichTextService {
           end: span.end,
           style: _mergeStyles(span.style, style),
         ));
+        applied = true;
       } else if (span.start < start && span.end > end) {
         // Selection is inside span - split into 3
         newSpans.add(TextSpan(start: span.start, end: start, style: span.style));
         newSpans.add(TextSpan(start: start, end: end, style: _mergeStyles(span.style, style)));
         newSpans.add(TextSpan(start: end, end: span.end, style: span.style));
+        applied = true;
       } else if (span.start < start) {
         // Overlap at start
         newSpans.add(TextSpan(start: span.start, end: start, style: span.style));
         newSpans.add(TextSpan(start: start, end: span.end, style: _mergeStyles(span.style, style)));
+        applied = true;
       } else {
         // Overlap at end
         newSpans.add(TextSpan(start: span.start, end: end, style: _mergeStyles(span.style, style)));
         newSpans.add(TextSpan(start: end, end: span.end, style: span.style));
+        applied = true;
       }
+    }
+
+    if (!applied) {
+      newSpans.add(TextSpan(start: start, end: end, style: style));
     }
 
     return RichTextContent(

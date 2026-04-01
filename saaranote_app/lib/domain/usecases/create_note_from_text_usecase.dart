@@ -4,9 +4,11 @@ import '../entities/flashcard.dart';
 import '../repositories/note_repository.dart';
 import '../repositories/summary_repository.dart';
 import '../repositories/flashcard_repository.dart';
+import '../entities/rich_text_content.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
+import '../../core/ai_engine.dart';
 
 /// Use case for creating a note from text input with automatic summarization
 /// and flashcard generation
@@ -14,11 +16,13 @@ class CreateNoteFromTextUseCase {
   final NoteRepository _noteRepository;
   final SummaryRepository _summaryRepository;
   final FlashcardRepository _flashcardRepository;
+  final AIEngine? _aiEngine;
 
   CreateNoteFromTextUseCase(
     this._noteRepository,
     this._summaryRepository,
     this._flashcardRepository,
+    this._aiEngine,
   );
 
   /// Execute the use case to create a note with summaries and flashcards
@@ -47,6 +51,9 @@ class CreateNoteFromTextUseCase {
       createdAt: now,
       updatedAt: now,
       color: params.color,
+      richContent: params.richContent,
+      drawingIds: params.drawingIds,
+      contentType: params.contentType ?? ContentType.plain,
     );
 
     final createdNote = await _noteRepository.create(note);
@@ -56,7 +63,7 @@ class CreateNoteFromTextUseCase {
     NoteSummary? createdSummary;
     if (params.generateSummary) {
       try {
-        final summaryText = Summarizer.generateDetailedSummary(cleanedContent);
+        final summaryText = await _generateSummaryText(cleanedContent);
         
         if (summaryText.isNotEmpty) {
           final summary = NoteSummary(
@@ -102,6 +109,17 @@ class CreateNoteFromTextUseCase {
     );
   }
 
+  Future<String> _generateSummaryText(String content) async {
+    if (_aiEngine == null) {
+      return Summarizer.generateDetailedSummary(content);
+    }
+
+    final result = await _aiEngine!.generateSummary(text: content);
+    return result.detailedSummary.isNotEmpty
+        ? result.detailedSummary
+        : Summarizer.generateDetailedSummary(content);
+  }
+
   /// Generate a title from the content if not provided
   String _generateTitle(String content) {
     final sentences = TextProcessor.splitIntoSentences(content);
@@ -126,6 +144,9 @@ class CreateNoteFromTextParams {
   final String? color;
   final bool generateSummary;
   final bool generateFlashcards;
+  final RichTextContent? richContent;
+  final List<String>? drawingIds;
+  final ContentType? contentType;
 
   CreateNoteFromTextParams({
     required this.title,
@@ -133,6 +154,9 @@ class CreateNoteFromTextParams {
     this.color,
     this.generateSummary = true,
     this.generateFlashcards = true,
+    this.richContent,
+    this.drawingIds,
+    this.contentType,
   });
 }
 

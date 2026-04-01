@@ -6,6 +6,10 @@ class TextProcessor {
 
     String cleaned = rawText;
 
+    // Remove common extraction artifacts (PDF/OCR)
+    cleaned = cleaned.replaceAll(RegExp(r'\$1'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r'\f'), ' ');
+
     // Remove excessive whitespace
     cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
 
@@ -116,4 +120,53 @@ class TextProcessor {
           sentences.isEmpty ? 0 : (wordCount / sentences.length).round(),
     };
   }
+
+  /// Normalize text for lightweight scoring and matching
+  static String normalizeForScoring(String text) {
+    if (text.isEmpty) return '';
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  /// Tokenize into lowercase words
+  static List<String> tokenize(String text) {
+    if (text.isEmpty) return [];
+    final normalized = normalizeForScoring(text);
+    if (normalized.isEmpty) return [];
+    return normalized.split(' ').where((t) => t.isNotEmpty).toList();
+  }
+
+  /// Simple suffix stripping for lightweight stemming
+  static String stemToken(String token) {
+    if (token.length <= 3) return token;
+    if (token.endsWith('ing') && token.length > 5) {
+      return token.substring(0, token.length - 3);
+    }
+    if (token.endsWith('ed') && token.length > 4) {
+      return token.substring(0, token.length - 2);
+    }
+    if (token.endsWith('es') && token.length > 4) {
+      return token.substring(0, token.length - 2);
+    }
+    if (token.endsWith('s') && token.length > 3) {
+      return token.substring(0, token.length - 1);
+    }
+    return token;
+  }
+
+  /// Remove common stopwords for lightweight NLP
+  static List<String> removeStopwords(List<String> tokens) {
+    if (tokens.isEmpty) return [];
+    return tokens.where((token) => !_stopwords.contains(token)).toList();
+  }
+
+  /// True if token is a stopword
+  static bool isStopword(String token) => _stopwords.contains(token);
+
+  static const Set<String> _stopwords = {
+    'a','an','the','and','or','but','if','then','else','when','while','to','of','in','on','for','with','by','from','as','at','be','is','are','was','were','been','being','it','this','that','these','those','i','you','he','she','we','they','them','their','our','your','my','me','him','her','its','do','does','did','doing','have','has','had','having','not','no','yes','can','could','should','would','may','might','will','just','so','than','too','very','about','into','over','after','before','between','through','during','without','within','also','such','some','most','more','many','much','each','few','other','another','same','any','all','both','either','neither','own','because','therefore','thus','however','although','despite'
+  };
 }

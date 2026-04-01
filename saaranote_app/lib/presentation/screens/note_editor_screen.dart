@@ -8,6 +8,7 @@ import '../widgets/drawing_tools_panel.dart';
 import '../../core/design_system/app_spacing.dart';
 import '../../core/design_system/app_typography.dart';
 import '../../domain/entities/note.dart';
+import '../../domain/entities/rich_text_content.dart' as domain;
 
 /// Advanced note editor screen with rich text and drawing support
 /// 
@@ -31,12 +32,16 @@ class NoteEditorScreen extends StatefulWidget {
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  late final RichTextEditingController _contentController;
   final _contentFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+
+    _contentController = RichTextEditingController(
+      viewModel: context.read<NoteEditorViewModel>(),
+    );
     
     // Load existing note if editing
     if (widget.existingNote != null) {
@@ -64,6 +69,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   void _onTextChanged() {
     final viewModel = context.read<NoteEditorViewModel>();
     viewModel.updateText(_contentController.text);
+    viewModel.updateTextSelection(_contentController.selection);
   }
 
   void _onFocusChanged() {
@@ -200,30 +206,34 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Widget _buildTextEditor() {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: TextField(
-        controller: _contentController,
-        focusNode: _contentFocusNode,
-        style: AppTypography.noteContent(),
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        decoration: InputDecoration(
-          hintText: 'Start typing or tap formatting buttons below...',
-          hintStyle: AppTypography.noteContent().copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+    return Consumer<NoteEditorViewModel>(
+      builder: (context, viewModel, child) {
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
-          border: InputBorder.none,
-        ),
-        textCapitalization: TextCapitalization.sentences,
-        onChanged: (text) {
-          // Text is automatically synced via listener
-        },
-      ),
+          child: TextField(
+            controller: _contentController,
+            focusNode: _contentFocusNode,
+            style: AppTypography.noteContent(),
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: InputDecoration(
+              hintText: 'Start typing or tap formatting buttons below...',
+              hintStyle: AppTypography.noteContent().copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              border: InputBorder.none,
+            ),
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (text) {
+              // Text is automatically synced via listener
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -308,20 +318,22 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         editorViewModel.saveDrawing();
       }
 
-      // Get rich text content if available
-      // TODO: In the future, create a new use case that accepts richContent and drawingIds
-      // final richContent = editorViewModel.getRichTextContent();
-      // final drawingIds = editorViewModel.getDrawingIds();
+      final richContent = editorViewModel.getRichTextContent();
+      final drawingIds = editorViewModel.getDrawingIds();
+      final drawings = editorViewModel.drawings;
 
-      // For now, use the existing createNoteFromText method
-      // In a real implementation, you'd create a new use case that accepts
-      // richContent and drawingIds parameters
-      
+      final persistedDrawingIds = drawingIds.isNotEmpty ? drawingIds : null;
+      final persistedDrawings = drawings.isNotEmpty ? drawings : null;
+
       final success = await createViewModel.createNoteFromText(
         title: title,
         content: content,
         generateSummary: true,
         generateFlashcards: true,
+        richContent: richContent,
+        drawingIds: persistedDrawingIds,
+        contentType: editorViewModel.contentType,
+        drawings: persistedDrawings,
       );
 
       if (success && mounted) {
@@ -353,5 +365,96 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         );
       }
     }
+  }
+}
+
+/// Text controller that renders rich text spans for the editor
+class RichTextEditingController extends TextEditingController {
+  final NoteEditorViewModel viewModel;
+
+  RichTextEditingController({
+    required this.viewModel,
+  });
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    bool withComposing = false,
+  }) {
+    final baseStyle = style ?? const TextStyle();
+    final text = value.text;
+
+    if (text.isEmpty) {
+      return TextSpan(text: '', style: baseStyle);
+    }
+
+    final spans = _buildSpans(text, viewModel.textSpans, baseStyle);
+    return TextSpan(style: baseStyle, children: spans);
+  }
+
+  List<TextSpan> _buildSpans(
+    String text,
+    List<domain.TextSpan> spans,
+    TextStyle baseStyle,
+  ) {
+    if (spans.isEmpty) {
+      return [TextSpan(text: text, style: baseStyle)];
+    }
+
+    final sorted = List<domain.TextSpan>.from(spans)
+      ..sort((a, b) => a.start.compareTo(b.start));
+
+    final result = <TextSpan>[];
+    int index = 0;
+
+    for (final span in sorted) {
+      final start = span.start.clamp(0, text.length);
+      final end = span.end.clamp(0, text.length);
+
+      if (start > index) {
+        result.add(TextSpan(
+          text: text.substring(index, start),
+          style: baseStyle,
+        ));
+      }
+
+      if (end > start) {
+        result.add(TextSpan(
+          text: text.substring(start, end),
+          style: _applySpanStyle(baseStyle, span.style),
+        ));
+      }
+
+      index = end;
+    }
+
+    if (index < text.length) {
+      result.add(TextSpan(
+        text: text.substring(index),
+        style: baseStyle,
+      ));
+    }
+
+    return result;
+  }
+
+  TextStyle _applySpanStyle(TextStyle baseStyle, domain.TextStyle spanStyle) {
+    return baseStyle.copyWith(
+      fontWeight: spanStyle.bold ? FontWeight.bold : null,
+      fontStyle: spanStyle.italic ? FontStyle.italic : null,
+      decoration: spanStyle.underline ? TextDecoration.underline : null,
+      fontSize: spanStyle.fontSize,
+      color: _parseColor(spanStyle.textColor),
+      backgroundColor: _parseColor(spanStyle.highlightColor),
+    );
+  }
+
+  Color? _parseColor(String? hexColor) {
+    if (hexColor == null || hexColor.isEmpty) return null;
+    final cleaned = hexColor.replaceFirst('#', '');
+    final value = int.tryParse(cleaned, radix: 16);
+    if (value == null) return null;
+    return Color(0xFF000000 | value);
   }
 }

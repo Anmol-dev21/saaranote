@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/note_summary.dart';
 import '../../domain/entities/flashcard.dart';
+import '../../domain/entities/drawing.dart';
 import '../../domain/usecases/get_note_by_id_usecase.dart';
 import '../../domain/usecases/get_summaries_for_note_usecase.dart';
 import '../../domain/usecases/get_flashcards_for_note_usecase.dart';
 import '../../core/services/pdf_export_service.dart';
+import '../../data/datasources/local/drawing_local_data_source.dart';
 
 /// ViewModel for viewing a single note with its details
 /// 
@@ -16,18 +18,21 @@ class NoteDetailViewModel extends ChangeNotifier {
   final GetSummariesForNoteUseCase _getSummariesForNoteUseCase;
   final GetFlashcardsForNoteUseCase _getFlashcardsForNoteUseCase;
   final PdfExportService _pdfExportService;
+  final DrawingLocalDataSource _drawingLocalDataSource;
 
   NoteDetailViewModel(
     this._getNoteByIdUseCase,
     this._getSummariesForNoteUseCase,
     this._getFlashcardsForNoteUseCase,
     this._pdfExportService,
+    this._drawingLocalDataSource,
   );
 
   // State
   Note? _note;
   List<NoteSummary> _summaries = [];
   List<Flashcard> _flashcards = [];
+  List<Drawing> _drawings = [];
   bool _isLoading = false;
   String? _errorMessage;
   File? _exportedPdfFile;
@@ -37,12 +42,14 @@ class NoteDetailViewModel extends ChangeNotifier {
   Note? get note => _note;
   List<NoteSummary> get summaries => _summaries;
   List<Flashcard> get flashcards => _flashcards;
+  List<Drawing> get drawings => _drawings;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasError => _errorMessage != null;
   bool get hasNote => _note != null;
   bool get hasSummaries => _summaries.isNotEmpty;
   bool get hasFlashcards => _flashcards.isNotEmpty;
+  bool get hasDrawings => _drawings.isNotEmpty;
   int get summaryCount => _summaries.length;
   int get flashcardCount => _flashcards.length;
   File? get exportedPdfFile => _exportedPdfFile;
@@ -64,6 +71,13 @@ class NoteDetailViewModel extends ChangeNotifier {
 
       // Load flashcards
       _flashcards = await _getFlashcardsForNoteUseCase.execute(noteId);
+
+      // Load drawings
+      if (_note?.drawingIds != null && _note!.drawingIds!.isNotEmpty) {
+        _drawings = await _drawingLocalDataSource.getDrawingsByIds(_note!.drawingIds!);
+      } else {
+        _drawings = await _drawingLocalDataSource.getDrawingsByNoteId(noteId);
+      }
 
       _isLoading = false;
       notifyListeners();
@@ -92,6 +106,7 @@ class NoteDetailViewModel extends ChangeNotifier {
     _note = null;
     _summaries = [];
     _flashcards = [];
+    _drawings = [];
     _isLoading = false;
     _errorMessage = null;
     _exportedPdfFile = null;

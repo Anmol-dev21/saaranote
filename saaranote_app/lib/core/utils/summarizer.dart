@@ -16,6 +16,13 @@ class Summarizer {
     
     if (sentences.isEmpty) return '';
     if (sentences.length <= maxSentences) {
+      final singleSentence = sentences.length == 1 ? sentences.first : null;
+      if (singleSentence != null) {
+        final words = singleSentence.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+        if (words.length > 40) {
+          return '${words.take(40).join(' ')}...';
+        }
+      }
       return sentences.join(' ');
     }
 

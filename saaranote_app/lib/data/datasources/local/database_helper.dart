@@ -23,7 +23,12 @@ class DatabaseHelper {
       version: 3, // Incremented from 2 to 3 for file organization support
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
+      onOpen: _onOpen,
     );
+  }
+
+  Future<void> _onOpen(Database db) async {
+    await _ensureDrawingsTable(db);
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -47,6 +52,20 @@ class DatabaseHelper {
         content_type $textNullableType DEFAULT 'plain'
       )
     ''');
+
+    // Drawings table for storing drawing stroke data
+    await db.execute('''
+      CREATE TABLE drawings (
+        id TEXT PRIMARY KEY,
+        note_id INTEGER NOT NULL,
+        drawing_data TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('CREATE INDEX idx_drawings_note_id ON drawings(note_id)');
 
     // Summaries table
     await db.execute('''
@@ -119,6 +138,71 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
       await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
     }
+<<<<<<< Updated upstream
+=======
+
+    // AI Chat system tables (version 4+)
+    if (version >= 4) {
+      // Document chunks for AI retrieval
+      await db.execute('''
+        CREATE TABLE document_chunks (
+          id $idType,
+          file_metadata_id $integerType NOT NULL,
+          chunk_index $integerType NOT NULL,
+          content $textType,
+          token_count $integerType,
+          created_at $integerType NOT NULL,
+          FOREIGN KEY (file_metadata_id) REFERENCES file_metadata(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await _createDocumentChunksFts(db);
+
+      // Chat sessions
+      await db.execute('''
+        CREATE TABLE chat_sessions (
+          id $idType,
+          title $textType,
+          created_at $integerType NOT NULL,
+          updated_at $integerType NOT NULL,
+          tags $textNullableType
+        )
+      ''');
+
+      // Chat messages
+      await db.execute('''
+        CREATE TABLE chat_messages (
+          id $idType,
+          session_id $integerType NOT NULL,
+          role $textType NOT NULL CHECK(role IN ('user', 'assistant')),
+          content $textType,
+          timestamp $integerType NOT NULL,
+          status $textType NOT NULL CHECK(status IN ('sending', 'sent', 'error')),
+          FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Message sources (citations)
+      await db.execute('''
+        CREATE TABLE message_sources (
+          id $idType,
+          message_id $integerType NOT NULL,
+          file_metadata_id $integerType NOT NULL,
+          chunk_id $integerType NOT NULL,
+          relevance_score REAL NOT NULL,
+          FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+          FOREIGN KEY (file_metadata_id) REFERENCES file_metadata(id) ON DELETE CASCADE,
+          FOREIGN KEY (chunk_id) REFERENCES document_chunks(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes for AI chat
+      await db.execute('CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)');
+      await db.execute('CREATE INDEX idx_messages_session ON chat_messages(session_id)');
+      await db.execute('CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)');
+      await db.execute('CREATE INDEX idx_sources_message ON message_sources(message_id)');
+    }
+>>>>>>> Stashed changes
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -193,10 +277,153 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
       await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
     }
+<<<<<<< Updated upstream
+=======
+
+    // Version 3 -> 4: Add AI chat system
+    if (oldVersion < 4) {
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+      const textNullableType = 'TEXT';
+      const integerType = 'INTEGER NOT NULL';
+
+      // Document chunks for AI retrieval
+      await db.execute('''
+        CREATE TABLE document_chunks (
+          id $idType,
+          file_metadata_id $integerType NOT NULL,
+          chunk_index $integerType NOT NULL,
+          content $textType,
+          token_count $integerType,
+          created_at $integerType NOT NULL,
+          FOREIGN KEY (file_metadata_id) REFERENCES file_metadata(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await _createDocumentChunksFts(db);
+
+      // Chat sessions
+      await db.execute('''
+        CREATE TABLE chat_sessions (
+          id $idType,
+          title $textType,
+          created_at $integerType NOT NULL,
+          updated_at $integerType NOT NULL,
+          tags $textNullableType
+        )
+      ''');
+
+      // Chat messages
+      await db.execute('''
+        CREATE TABLE chat_messages (
+          id $idType,
+          session_id $integerType NOT NULL,
+          role $textType NOT NULL CHECK(role IN ('user', 'assistant')),
+          content $textType,
+          timestamp $integerType NOT NULL,
+          status $textType NOT NULL CHECK(status IN ('sending', 'sent', 'error')),
+          FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Message sources (citations)
+      await db.execute('''
+        CREATE TABLE message_sources (
+          id $idType,
+          message_id $integerType NOT NULL,
+          file_metadata_id $integerType NOT NULL,
+          chunk_id $integerType NOT NULL,
+          relevance_score REAL NOT NULL,
+          FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+          FOREIGN KEY (file_metadata_id) REFERENCES file_metadata(id) ON DELETE CASCADE,
+          FOREIGN KEY (chunk_id) REFERENCES document_chunks(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes for AI chat
+      await db.execute('CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)');
+      await db.execute('CREATE INDEX idx_messages_session ON chat_messages(session_id)');
+      await db.execute('CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)');
+      await db.execute('CREATE INDEX idx_sources_message ON message_sources(message_id)');
+    }
+>>>>>>> Stashed changes
   }
 
   Future<void> close() async {
     final db = await instance.database;
     await db.close();
+  }
+
+  Future<void> _ensureDrawingsTable(Database db) async {
+    try {
+      final result = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='drawings'",
+      );
+      if (result.isNotEmpty) return;
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS drawings (
+          id TEXT PRIMARY KEY,
+          note_id INTEGER NOT NULL,
+          drawing_data TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_drawings_note_id ON drawings(note_id)');
+    } catch (_) {
+      // Avoid blocking app startup if the check fails.
+    }
+  }
+
+  Future<void> _createDocumentChunksFts(Database db) async {
+    var created = false;
+
+    try {
+      await db.execute('''
+        CREATE VIRTUAL TABLE document_chunks_fts USING fts5(
+          content,
+          content='document_chunks',
+          content_rowid='id',
+          tokenize='porter unicode61'
+        )
+      ''');
+      created = true;
+    } catch (_) {
+      // Fallback to FTS4 on devices without FTS5 support.
+      try {
+        await db.execute('''
+          CREATE VIRTUAL TABLE document_chunks_fts USING fts4(
+            content,
+            content='document_chunks',
+            content_rowid='id'
+          )
+        ''');
+        created = true;
+      } catch (_) {
+        created = false;
+      }
+    }
+
+    if (!created) return;
+
+    await db.execute('''
+      CREATE TRIGGER chunks_fts_insert AFTER INSERT ON document_chunks BEGIN
+        INSERT INTO document_chunks_fts(rowid, content) VALUES (new.id, new.content);
+      END
+    ''');
+
+    await db.execute('''
+      CREATE TRIGGER chunks_fts_delete AFTER DELETE ON document_chunks BEGIN
+        DELETE FROM document_chunks_fts WHERE rowid = old.id;
+      END
+    ''');
+
+    await db.execute('''
+      CREATE TRIGGER chunks_fts_update AFTER UPDATE ON document_chunks BEGIN
+        UPDATE document_chunks_fts SET content = new.content WHERE rowid = new.id;
+      END
+    ''');
   }
 }

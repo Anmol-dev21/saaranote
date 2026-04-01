@@ -9,6 +9,7 @@ import '../../core/services/pdf_text_service.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
+import '../../core/ai_engine.dart';
 
 /// Use case for creating a note from a PDF file with automatic
 /// summarization and flashcard generation
@@ -17,12 +18,14 @@ class CreateNoteFromPdfUseCase {
   final SummaryRepository _summaryRepository;
   final FlashcardRepository _flashcardRepository;
   final PdfTextService _pdfTextService;
+  final AIEngine? _aiEngine;
 
   CreateNoteFromPdfUseCase(
     this._noteRepository,
     this._summaryRepository,
     this._flashcardRepository,
     this._pdfTextService,
+    this._aiEngine,
   );
 
   /// Execute the use case to create a note from a PDF file
@@ -50,7 +53,9 @@ class CreateNoteFromPdfUseCase {
     final cleanedContent = TextProcessor.cleanText(extractedText);
     
     if (cleanedContent.isEmpty) {
-      throw CreateNoteFromPdfException('No text found in the PDF');
+      throw CreateNoteFromPdfException(
+        'No text found in the PDF. If this is a scanned PDF, try image import/OCR.',
+      );
     }
 
     // Validate minimum content length
@@ -76,7 +81,7 @@ class CreateNoteFromPdfUseCase {
     NoteSummary? createdSummary;
     if (params.generateSummary) {
       try {
-        final summaryText = Summarizer.generateDetailedSummary(cleanedContent);
+        final summaryText = await _generateSummaryText(cleanedContent);
         
         if (summaryText.isNotEmpty) {
           final summary = NoteSummary(
@@ -121,6 +126,17 @@ class CreateNoteFromPdfUseCase {
       extractedText: extractedText,
       wordCount: wordCount,
     );
+  }
+
+  Future<String> _generateSummaryText(String content) async {
+    if (_aiEngine == null) {
+      return Summarizer.generateDetailedSummary(content);
+    }
+
+    final result = await _aiEngine!.generateSummary(text: content);
+    return result.detailedSummary.isNotEmpty
+        ? result.detailedSummary
+        : Summarizer.generateDetailedSummary(content);
   }
 
   /// Generate a title from the content

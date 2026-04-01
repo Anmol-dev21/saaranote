@@ -1,0 +1,38 @@
+{
+  "buildFiles": [
+    "/home/codespace/.pub-cache/hosted/pub.dev/pdf_render-1.4.12/android/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/codespace/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/codespace/.pub-cache/hosted/pub.dev/pdf_render-1.4.12/android/.cxx/RelWithDebInfo/6qf4h423/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/codespace/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/codespace/.pub-cache/hosted/pub.dev/pdf_render-1.4.12/android/.cxx/RelWithDebInfo/6qf4h423/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "bbhelper::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "bbhelper",
+      "output": "/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/6qf4h423/obj/armeabi-v7a/libbbhelper.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/home/codespace/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/codespace/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

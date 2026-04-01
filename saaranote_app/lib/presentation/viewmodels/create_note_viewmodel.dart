@@ -6,6 +6,9 @@ import '../../domain/entities/flashcard.dart';
 import '../../domain/usecases/create_note_from_text_usecase.dart';
 import '../../domain/usecases/create_note_from_image_usecase.dart';
 import '../../domain/usecases/create_note_from_pdf_usecase.dart';
+import '../../domain/entities/rich_text_content.dart' as domain;
+import '../../domain/entities/drawing.dart';
+import '../../data/datasources/local/drawing_local_data_source.dart';
 
 /// ViewModel for creating notes from text, images, or PDF files
 /// 
@@ -14,11 +17,13 @@ class CreateNoteViewModel extends ChangeNotifier {
   final CreateNoteFromTextUseCase _createNoteFromTextUseCase;
   final CreateNoteFromImageUseCase _createNoteFromImageUseCase;
   final CreateNoteFromPdfUseCase _createNoteFromPdfUseCase;
+  final DrawingLocalDataSource _drawingLocalDataSource;
 
   CreateNoteViewModel(
     this._createNoteFromTextUseCase,
     this._createNoteFromImageUseCase,
     this._createNoteFromPdfUseCase,
+    this._drawingLocalDataSource,
   );
 
   // State
@@ -50,6 +55,10 @@ class CreateNoteViewModel extends ChangeNotifier {
     String? color,
     bool generateSummary = true,
     bool generateFlashcards = true,
+    domain.RichTextContent? richContent,
+    List<String>? drawingIds,
+    ContentType? contentType,
+    List<Drawing>? drawings,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -67,9 +76,22 @@ class CreateNoteViewModel extends ChangeNotifier {
         color: color,
         generateSummary: generateSummary,
         generateFlashcards: generateFlashcards,
+        richContent: richContent,
+        drawingIds: drawingIds,
+        contentType: contentType,
       );
 
       final result = await _createNoteFromTextUseCase.execute(params);
+
+      if (drawings != null && drawings.isNotEmpty && result.note.id != null) {
+        try {
+          for (final drawing in drawings) {
+            await _drawingLocalDataSource.saveDrawing(drawing, result.note.id!);
+          }
+        } catch (_) {
+          // Do not block note creation if drawing persistence fails
+        }
+      }
 
       _createdNote = result.note;
       _createdSummary = result.summary;

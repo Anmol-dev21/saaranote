@@ -48,9 +48,18 @@ dependencies:
   
   # PDF generation
   pdf: ^3.11.1
+
+  # PDF rendering (for OCR fallback on scanned PDFs)
+  pdf_render:
+    path: vendor/pdf_render
   
+<<<<<<< Updated upstream
   # Google Fonts for typography (compatible with pdf_text)
   google_fonts: ^4.0.4
+=======
+  # Google Fonts for typography
+  google_fonts: ^8.0.2
+>>>>>>> Stashed changes
   
   # State management
   provider: ^6.1.2
