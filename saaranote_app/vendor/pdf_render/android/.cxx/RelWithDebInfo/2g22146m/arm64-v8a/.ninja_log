@@ -1,0 +1,15 @@
+# ninja log v5
+0	149	1775044965381152046	CMakeFiles/bbhelper.dir/c++/directBufferAndroid.cpp.o	a0e34a03b4c249dd
+150	187	1775044965418152045	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+48	892	1775045456160133057	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+123	984	1775045979476112809	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+59	870	1775046530587091485	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+97	732	1775047703611046097	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+44	714	1775052196981872237	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+79	6440	1775123955654183814	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+33	675	1775125519484167641	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+76	1258	1775127530994146837	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+144	1029	1775132076477099827	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+145	1431	1775132717488093198	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+96	1034	1775133373014086418	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544
+44	950	1775133993964079996	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/arm64-v8a/libbbhelper.so	d3e69b8b03f65544

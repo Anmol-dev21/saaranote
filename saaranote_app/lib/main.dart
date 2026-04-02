@@ -28,12 +28,22 @@ import 'core/services/pdf_export_service.dart';
 import 'core/services/pdf_text_service.dart';
 import 'core/services/rich_text_service.dart';
 import 'core/services/drawing_service.dart';
+<<<<<<< Updated upstream
+=======
+import 'core/services/retrieval_service.dart';
+import 'core/services/generation_service.dart';
+import 'core/services/offline_qa_service.dart';
+import 'core/services/settings_service.dart';
+import 'core/ai_engine.dart';
+>>>>>>> Stashed changes
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
 import 'presentation/viewmodels/create_note_viewmodel.dart';
 import 'presentation/viewmodels/note_detail_viewmodel.dart';
 import 'presentation/viewmodels/note_editor_viewmodel.dart';
+import 'presentation/viewmodels/chat_viewmodel.dart';
+import 'presentation/viewmodels/settings_viewmodel.dart';
 import 'presentation/screens/home_screen.dart';
 
 void main() {
@@ -59,6 +69,19 @@ class MyApp extends StatelessWidget {
     final pdfTextService = PdfTextService();
     final richTextService = RichTextService();
     final drawingService = DrawingService();
+<<<<<<< Updated upstream
+=======
+    final drawingLocalDataSource = DrawingLocalDataSource(databaseHelper, drawingService);
+    final aiEngine = AIEngine();
+    final retrievalService = RetrievalService(indexRepository);
+    final queryProcessor = QueryProcessor();
+    final generationService = GenerationService();
+    final offlineQaService = OfflineQaService(
+      retrievalService: retrievalService,
+      queryProcessor: queryProcessor,
+    );
+    final settingsService = SettingsService();
+>>>>>>> Stashed changes
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -123,14 +146,34 @@ class MyApp extends StatelessWidget {
             drawingService,
           ),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ChatViewModel(
+            chatRepository,
+            askQuestionUseCase,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsViewModel(settingsService)..load(),
+        ),
       ],
-      child: MaterialApp(
-        title: 'SaaraNote',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme(),
-        darkTheme: AppTheme.darkTheme(),
-        themeMode: ThemeMode.system,
-        home: const HomeScreen(),
+      child: Consumer<SettingsViewModel>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: 'SaaraNote',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme(),
+            darkTheme: AppTheme.darkTheme(),
+            themeMode: settings.themeMode,
+            builder: (context, appChild) {
+              final data = MediaQuery.of(context);
+              return MediaQuery(
+                data: data.copyWith(textScaleFactor: settings.textScale),
+                child: appChild ?? const SizedBox.shrink(),
+              );
+            },
+            home: const HomeScreen(),
+          );
+        },
       ),
     );
   }

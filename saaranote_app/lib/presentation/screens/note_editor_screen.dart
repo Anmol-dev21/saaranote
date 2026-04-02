@@ -109,25 +109,24 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget _buildModeSelector() {
     return Consumer<NoteEditorViewModel>(
       builder: (context, viewModel, child) {
+        final theme = Theme.of(context);
         return Container(
+          margin: AppSpacing.pagePadding.add(AppSpacing.verticalSm),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 1,
-              ),
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(
+              color: theme.dividerColor.withOpacity(0.4),
             ),
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
-          ),
+          padding: AppSpacing.paddingXs,
           child: Row(
             children: [
               Text(
-                'Mode:',
-                style: AppTypography.bodySmall(),
+                'Mode',
+                style: AppTypography.bodySmall(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -164,18 +163,24 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Widget _buildTitleInput() {
+    final theme = Theme.of(context);
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+      margin: AppSpacing.pagePadding,
+      padding: AppSpacing.paddingMd,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: AppSpacing.borderRadiusMd,
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.4),
+        ),
       ),
       child: TextFormField(
         controller: _titleController,
-        style: AppTypography.h3(),
+        style: AppTypography.h3(color: theme.colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: 'Note Title',
-          hintStyle: AppTypography.h3().copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          hintStyle: AppTypography.h3(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           border: InputBorder.none,
         ),
@@ -191,7 +196,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           case EditorMode.text:
             return _buildTextEditor();
           case EditorMode.draw:
-            return const DrawingCanvas();
+            return _buildDrawingSurface();
           case EditorMode.hybrid:
             return _buildHybridEditor();
         }
@@ -199,6 +204,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
+<<<<<<< Updated upstream
   Widget _buildTextEditor() {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -224,55 +230,106 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           // Text is automatically synced via listener
         },
       ),
+=======
+  Widget _buildTextEditor({EdgeInsetsGeometry? outerPadding}) {
+    return Consumer<NoteEditorViewModel>(
+      builder: (context, viewModel, child) {
+        final theme = Theme.of(context);
+        return Container(
+          margin: outerPadding ?? AppSpacing.pagePadding.add(AppSpacing.verticalSm),
+          padding: AppSpacing.paddingMd,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: AppSpacing.borderRadiusMd,
+            border: Border.all(
+              color: theme.dividerColor.withOpacity(0.4),
+            ),
+          ),
+          child: TextField(
+            controller: _contentController,
+            focusNode: _contentFocusNode,
+            style: AppTypography.noteContent(
+              color: theme.colorScheme.onSurface,
+            ),
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: InputDecoration(
+              hintText: 'Start typing or tap formatting buttons below...',
+              hintStyle: AppTypography.noteContent(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              border: InputBorder.none,
+            ),
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (text) {
+              // Text is automatically synced via listener
+            },
+          ),
+        );
+      },
+>>>>>>> Stashed changes
     );
   }
 
   Widget _buildHybridEditor() {
-    return Column(
-      children: [
-        // Text section (upper half)
-        Expanded(
-          flex: 1,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 2,
-                ),
-              ),
-            ),
-            child: _buildTextEditor(),
+    return Padding(
+      padding: AppSpacing.pagePadding.add(AppSpacing.verticalSm),
+      child: Column(
+        children: [
+          // Text section (upper half)
+          Expanded(
+            flex: 1,
+            child: _buildTextEditor(outerPadding: EdgeInsets.zero),
           ),
-        ),
-        
-        // Drawing section (lower half)
-        Expanded(
-          flex: 1,
-          child: const DrawingCanvas(),
-        ),
-      ],
+
+          AppSpacing.vGapSm,
+
+          // Drawing section (lower half)
+          Expanded(
+            flex: 1,
+            child: _buildDrawingSurface(outerPadding: EdgeInsets.zero),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildToolbar() {
     return Consumer<NoteEditorViewModel>(
       builder: (context, viewModel, child) {
-        switch (viewModel.mode) {
-          case EditorMode.text:
-            return const RichTextToolbar();
-          case EditorMode.draw:
-            return const DrawingToolsPanel();
-          case EditorMode.hybrid:
-            return Column(
+        final content = switch (viewModel.mode) {
+          EditorMode.text => const RichTextToolbar(),
+          EditorMode.draw => const DrawingToolsPanel(),
+          EditorMode.hybrid => Column(
               mainAxisSize: MainAxisSize.min,
               children: const [
                 RichTextToolbar(),
                 DrawingToolsPanel(),
               ],
-            );
-        }
+            ),
+        };
+
+        return SafeArea(top: false, child: content);
       },
+    );
+  }
+
+  Widget _buildDrawingSurface({EdgeInsetsGeometry? outerPadding}) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: outerPadding ?? AppSpacing.pagePadding.add(AppSpacing.verticalSm),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: AppSpacing.borderRadiusMd,
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.4),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: AppSpacing.borderRadiusMd,
+        child: const DrawingCanvas(),
+      ),
     );
   }
 

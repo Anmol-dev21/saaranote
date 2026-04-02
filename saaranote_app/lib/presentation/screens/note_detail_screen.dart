@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/note_detail_viewmodel.dart';
+<<<<<<< Updated upstream
+=======
+import '../../domain/entities/drawing.dart';
+import '../../domain/entities/rich_text_content.dart' as domain;
+import '../../core/design_system/app_components.dart';
+import '../../core/design_system/app_spacing.dart';
+import '../../core/design_system/app_typography.dart';
+>>>>>>> Stashed changes
 
 /// Screen displaying note details with summaries and flashcards
 class NoteDetailScreen extends StatefulWidget {
@@ -27,6 +35,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Note Details'),
@@ -91,86 +100,117 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           }
 
           final note = viewModel.note!;
+          final contentStyle = AppTypography.body(
+            color: theme.colorScheme.onSurface,
+          );
 
           return RefreshIndicator(
             onRefresh: () => viewModel.refresh(),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Note Title
                   Text(
                     note.title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.h1(
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  AppSpacing.vGapSm,
                   
                   // Metadata
-                  Row(
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
                     children: [
-                      Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatDate(note.updatedAt),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                      _buildMetaPill(
+                        icon: Icons.access_time,
+                        label: _formatDate(note.updatedAt),
                       ),
-                      const SizedBox(width: 16),
-                      if (viewModel.hasSummaries) ...[
-                        Icon(Icons.description, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${viewModel.summaryCount} summary',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                      if (viewModel.hasSummaries)
+                        _buildMetaPill(
+                          icon: Icons.description,
+                          label: '${viewModel.summaryCount} summary',
                         ),
-                      ],
-                      const SizedBox(width: 16),
-                      if (viewModel.hasFlashcards) ...[
-                        Icon(Icons.psychology, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${viewModel.flashcardCount} cards',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                      if (viewModel.hasFlashcards)
+                        _buildMetaPill(
+                          icon: Icons.psychology,
+                          label: '${viewModel.flashcardCount} cards',
                         ),
-                      ],
                     ],
                   ),
-                  const Divider(height: 32),
+                  AppSpacing.vGapLg,
                   
                   // Note Content
                   _buildSection(
                     title: 'Content',
                     icon: Icons.article,
+<<<<<<< Updated upstream
                     child: SelectableText(
                       note.content,
                       style: const TextStyle(
                         fontSize: 16,
                         height: 1.5,
+=======
+                    child: note.hasRichContent
+                        ? SelectableText.rich(
+                            _buildRichTextSpan(note.richContent!, contentStyle),
+                          )
+                        : SelectableText(
+                            note.content,
+                            style: contentStyle,
+                          ),
+                  ),
+
+                  // Drawings Section
+                  if (viewModel.hasDrawings) ...[
+                    AppSpacing.vGapLg,
+                    _buildSection(
+                      title: 'Drawings',
+                      icon: Icons.draw,
+                      child: Column(
+                        children: viewModel.drawings.map((drawing) {
+                          return Padding(
+                            padding: AppSpacing.verticalXs,
+                            child: Container(
+                              padding: AppSpacing.paddingSm,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerLow,
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                border: Border.all(
+                                  color: theme.dividerColor.withOpacity(0.4),
+                                ),
+                              ),
+                              child: AspectRatio(
+                                aspectRatio: 4 / 3,
+                                child: ClipRRect(
+                                  borderRadius: AppSpacing.borderRadiusSm,
+                                  child: CustomPaint(
+                                    painter: _DrawingPreviewPainter(drawing: drawing),
+                                    child: const SizedBox.expand(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+>>>>>>> Stashed changes
                       ),
                     ),
                   ),
                   
                   // Summary Section
                   if (viewModel.hasSummaries) ...[
-                    const SizedBox(height: 24),
+                    AppSpacing.vGapLg,
                     _buildSection(
                       title: 'Summary',
                       icon: Icons.description,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: viewModel.summaries.map((summary) {
+<<<<<<< Updated upstream
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
@@ -184,6 +224,25 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                               style: const TextStyle(
                                 fontSize: 14,
                                 height: 1.5,
+=======
+                          return Padding(
+                            padding: AppSpacing.verticalXs,
+                            child: Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerLow,
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                border: Border.all(
+                                  color: theme.dividerColor.withOpacity(0.4),
+                                ),
+                              ),
+                              child: SelectableText(
+                                summary.summaryText,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  height: 1.6,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+>>>>>>> Stashed changes
                               ),
                             ),
                           );
@@ -194,63 +253,71 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   
                   // Flashcards Section
                   if (viewModel.hasFlashcards) ...[
-                    const SizedBox(height: 24),
+                    AppSpacing.vGapLg,
                     _buildSection(
                       title: 'Flashcards',
                       icon: Icons.psychology,
                       child: Column(
                         children: viewModel.flashcards.map((flashcard) {
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ExpansionTile(
-                              title: Text(
-                                flashcard.question,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                          return Padding(
+                            padding: AppSpacing.verticalXs,
+                            child: Card(
+                              elevation: 0,
+                              color: theme.colorScheme.surfaceContainerLow,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                                side: BorderSide(
+                                  color: theme.dividerColor.withOpacity(0.4),
                                 ),
                               ),
-                              leading: CircleAvatar(
-                                backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
-                                child: Text(
-                                  '${flashcard.confidenceLevel}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                              child: ExpansionTile(
+                                tilePadding: AppSpacing.paddingMd,
+                                childrenPadding: AppSpacing.paddingMd,
+                                title: Text(
+                                  flashcard.question,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
+                                leading: CircleAvatar(
+                                  backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
+                                  child: Text(
+                                    '${flashcard.confidenceLevel}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                children: [
+                                  Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        'Answer:',
-                                        style: TextStyle(
+                                      Text(
+                                        'Answer',
+                                        style: theme.textTheme.labelMedium?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.grey,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      AppSpacing.vGapXs,
                                       SelectableText(
                                         flashcard.answer,
-                                        style: const TextStyle(fontSize: 14),
+                                        style: theme.textTheme.bodyMedium,
                                       ),
                                       if (flashcard.lastReviewedAt != null) ...[
-                                        const SizedBox(height: 8),
+                                        AppSpacing.vGapSm,
                                         Text(
                                           'Last reviewed: ${_formatDate(flashcard.lastReviewedAt!)}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
                                           ),
                                         ),
                                       ],
                                     ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         }).toList(),
@@ -315,25 +382,79 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     required IconData icon,
     required Widget child,
   }) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(icon, size: 20, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+        AppCard(
+          padding: AppSpacing.cardContentPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    height: 32,
+                    width: 32,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  AppSpacing.hGapSm,
+                  Text(
+                    title,
+                    style: AppTypography.h3(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              AppSpacing.vGapSm,
+              child,
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
-        child,
       ],
+    );
+  }
+
+  Widget _buildMetaPill({
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          AppSpacing.hGapXs,
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

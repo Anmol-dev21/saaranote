@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../viewmodels/create_note_viewmodel.dart';
+import '../../core/design_system/app_spacing.dart';
+import '../../core/design_system/app_colors.dart';
 
 /// Screen for adding a new note from text, image, or PDF
 class AddNoteScreen extends StatefulWidget {
@@ -41,6 +43,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: _saveNote,
+            tooltip: 'Save',
           ),
         ],
       ),
@@ -61,14 +64,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
           return SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildTabSelector(),
-                    const SizedBox(height: 16),
+                    AppSpacing.vGapMd,
                     
                     if (_selectedTab == 0) ...[
                       _buildTextInput(),
@@ -78,11 +81,11 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                       _buildPdfInput(),
                     ],
                     
-                    const SizedBox(height: 16),
+                    AppSpacing.vGapMd,
                     _buildOptions(),
                     
                     if (viewModel.hasError) ...[
-                      const SizedBox(height: 16),
+                      AppSpacing.vGapMd,
                       _buildErrorMessage(viewModel.errorMessage!),
                     ],
                   ],
@@ -98,9 +101,13 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   Widget _buildTabSelector() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.4),
+        ),
       ),
+      padding: AppSpacing.paddingXs,
       child: Row(
         children: [
           Expanded(
@@ -141,23 +148,30 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected
+              ? Theme.of(context).colorScheme.surface
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: isSelected ? Theme.of(context).primaryColor : Colors.grey[600],
+              size: 18,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 8),
+            AppSpacing.hGapXs,
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[600],
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -171,22 +185,22 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _buildSectionTitle('Details'),
+        AppSpacing.vGapSm,
         TextFormField(
           controller: _titleController,
-          decoration: const InputDecoration(
+          decoration: _inputDecoration(
             labelText: 'Title (optional)',
             hintText: 'Enter note title',
-            border: OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.sentences,
         ),
-        const SizedBox(height: 16),
+        AppSpacing.vGapMd,
         TextFormField(
           controller: _contentController,
-          decoration: const InputDecoration(
+          decoration: _inputDecoration(
             labelText: 'Content',
             hintText: 'Enter your note content',
-            border: OutlineInputBorder(),
             alignLabelWithHint: true,
           ),
           maxLines: 10,
@@ -206,28 +220,31 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _buildSectionTitle('Details'),
+        AppSpacing.vGapSm,
         TextFormField(
           controller: _titleController,
-          decoration: const InputDecoration(
+          decoration: _inputDecoration(
             labelText: 'Title (optional)',
             hintText: 'Enter note title',
-            border: OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.sentences,
         ),
-        const SizedBox(height: 16),
+        AppSpacing.vGapMd,
+        _buildSectionTitle('Source image'),
+        AppSpacing.vGapSm,
         
         if (_selectedImage != null) ...[
           Container(
             height: 200,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   child: Image.file(
                     _selectedImage!,
                     width: double.infinity,
@@ -249,7 +266,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          AppSpacing.vGapMd,
         ],
         
         ElevatedButton.icon(
@@ -257,7 +274,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           icon: const Icon(Icons.photo_library),
           label: Text(_selectedImage == null ? 'Select Image' : 'Change Image'),
           style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
         
@@ -268,7 +285,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               'Select an image to extract text using OCR',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -281,28 +298,35 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _buildSectionTitle('Details'),
+        AppSpacing.vGapSm,
         TextFormField(
           controller: _titleController,
-          decoration: const InputDecoration(
+          decoration: _inputDecoration(
             labelText: 'Title (optional)',
             hintText: 'Will be auto-generated if empty',
-            border: OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.sentences,
         ),
-        const SizedBox(height: 16),
+        AppSpacing.vGapMd,
+        _buildSectionTitle('Source PDF'),
+        AppSpacing.vGapSm,
         if (_selectedPdf != null) ...[
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: AppSpacing.paddingMd,
             decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Row(
               children: [
-                const Icon(Icons.picture_as_pdf, color: Colors.blue, size: 40),
-                const SizedBox(width: 12),
+                Icon(
+                  Icons.picture_as_pdf,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 36,
+                ),
+                AppSpacing.hGapSm,
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,10 +335,13 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                         'PDF Selected',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(height: 4),
+                      AppSpacing.vGapXs,
                       Text(
                         _selectedPdf!.path.split('/').last,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -322,7 +349,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
+                  icon: Icon(Icons.close, color: AppColors.errorLight),
                   onPressed: () => setState(() => _selectedPdf = null),
                 ),
               ],
@@ -334,16 +361,16 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             icon: const Icon(Icons.upload_file),
             label: const Text('Select PDF File'),
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
-          const SizedBox(height: 8),
+          AppSpacing.vGapXs,
           Text(
             'Select a PDF file to extract text and create a note',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -352,59 +379,88 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   }
 
   Widget _buildOptions() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Options',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SwitchListTile(
-              title: const Text('Generate Summary'),
-              subtitle: const Text('Automatically create summary'),
-              value: _generateSummary,
-              onChanged: (value) => setState(() => _generateSummary = value),
-              contentPadding: EdgeInsets.zero,
-            ),
-            SwitchListTile(
-              title: const Text('Generate Flashcards'),
-              subtitle: const Text('Extract key points as flashcards'),
-              value: _generateFlashcards,
-              onChanged: (value) => setState(() => _generateFlashcards = value),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
+    return Container(
+      padding: AppSpacing.paddingMd,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Options'),
+          SwitchListTile(
+            title: const Text('Generate Summary'),
+            subtitle: const Text('Automatically create summary'),
+            value: _generateSummary,
+            onChanged: (value) => setState(() => _generateSummary = value),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: const Text('Generate Flashcards'),
+            subtitle: const Text('Extract key points as flashcards'),
+            value: _generateFlashcards,
+            onChanged: (value) => setState(() => _generateFlashcards = value),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildErrorMessage(String message) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: AppSpacing.paddingSm,
       decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red[200]!),
+        color: AppColors.errorLight.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.errorLight.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Colors.red),
-          const SizedBox(width: 8),
+          Icon(Icons.error_outline, color: AppColors.errorLight),
+          AppSpacing.hGapSm,
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColors.errorLight),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String labelText,
+    required String hintText,
+    bool alignLabelWithHint = false,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      alignLabelWithHint: alignLabelWithHint,
+      filled: true,
+      fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }
 

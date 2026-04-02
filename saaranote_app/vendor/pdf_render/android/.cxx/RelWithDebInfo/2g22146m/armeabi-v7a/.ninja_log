@@ -1,0 +1,15 @@
+# ninja log v5
+0	57	1775044966103152019	CMakeFiles/bbhelper.dir/c++/directBufferAndroid.cpp.o	f49ecdb098fd8a0a
+57	83	1775044966130152017	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+2	161	1775045456446133046	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+2	210	1775045979783112797	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+5	165	1775046530928091471	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+1	131	1775047703840046089	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+2	134	1775052197234872228	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+2	558	1775123956675183803	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+8	340	1775125519888167636	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+3	111	1775127531381146833	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+4	229	1775132076836099824	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+1	94	1775132717662093196	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+1	107	1775133373201086416	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
+3	155	1775133994217079994	/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a/libbbhelper.so	5bd66e791abcc835
