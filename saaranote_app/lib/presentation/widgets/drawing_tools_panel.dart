@@ -26,86 +26,90 @@ class DrawingToolsPanel extends StatelessWidget {
             horizontal: AppSpacing.sm,
             vertical: AppSpacing.xs,
           ),
-          child: Row(
-            children: [
-              // Pen tool
-              _ToolButton(
-                icon: Icons.edit,
-                isActive: viewModel.strokeType == StrokeType.pen,
-                onPressed: () => viewModel.setStrokeType(StrokeType.pen),
-                tooltip: 'Pen',
-              ),
-              
-              SizedBox(width: AppSpacing.xs),
-              
-              // Highlighter tool
-              _ToolButton(
-                icon: Icons.highlight,
-                isActive: viewModel.strokeType == StrokeType.highlighter,
-                onPressed: () => viewModel.setStrokeType(StrokeType.highlighter),
-                tooltip: 'Highlighter',
-              ),
-              
-              SizedBox(width: AppSpacing.xs),
-              
-              // Eraser tool
-              _ToolButton(
-                icon: Icons.auto_fix_high,
-                isActive: viewModel.strokeType == StrokeType.eraser,
-                onPressed: () => viewModel.setStrokeType(StrokeType.eraser),
-                tooltip: 'Eraser',
-              ),
-              
-              SizedBox(width: AppSpacing.sm),
-              _VerticalDivider(),
-              SizedBox(width: AppSpacing.sm),
-              
-              // Color picker
-              _ColorPicker(
-                currentColor: viewModel.penColor,
-                onColorChanged: viewModel.setPenColor,
-              ),
-              
-              SizedBox(width: AppSpacing.sm),
-              _VerticalDivider(),
-              SizedBox(width: AppSpacing.sm),
-              
-              // Thickness slider
-              Expanded(
-                child: _ThicknessSlider(
-                  currentWidth: viewModel.penWidth,
-                  onWidthChanged: viewModel.setPenWidth,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                // Pen tool
+                _ToolButton(
+                  icon: Icons.edit,
+                  isActive: viewModel.strokeType == StrokeType.pen,
+                  onPressed: () => viewModel.setStrokeType(StrokeType.pen),
+                  tooltip: 'Pen',
                 ),
-              ),
-              
-              SizedBox(width: AppSpacing.sm),
-              _VerticalDivider(),
-              SizedBox(width: AppSpacing.sm),
-              
-              // Undo
-              IconButton(
-                icon: const Icon(Icons.undo),
-                onPressed: viewModel.canUndo ? viewModel.undo : null,
-                tooltip: 'Undo',
-                iconSize: 20,
-              ),
-              
-              // Redo
-              IconButton(
-                icon: const Icon(Icons.redo),
-                onPressed: viewModel.canRedo ? viewModel.redo : null,
-                tooltip: 'Redo',
-                iconSize: 20,
-              ),
-              
-              // Clear
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: viewModel.clearDrawing,
-                tooltip: 'Clear Canvas',
-                iconSize: 20,
-              ),
-            ],
+
+                SizedBox(width: AppSpacing.xs),
+
+                // Highlighter tool
+                _ToolButton(
+                  icon: Icons.highlight,
+                  isActive: viewModel.strokeType == StrokeType.highlighter,
+                  onPressed: () => viewModel.setStrokeType(StrokeType.highlighter),
+                  tooltip: 'Highlighter',
+                ),
+
+                SizedBox(width: AppSpacing.xs),
+
+                // Eraser tool
+                _ToolButton(
+                  icon: Icons.auto_fix_high,
+                  isActive: viewModel.strokeType == StrokeType.eraser,
+                  onPressed: () => viewModel.setStrokeType(StrokeType.eraser),
+                  tooltip: 'Eraser',
+                ),
+
+                SizedBox(width: AppSpacing.sm),
+                _VerticalDivider(),
+                SizedBox(width: AppSpacing.sm),
+
+                // Color picker
+                _ColorPicker(
+                  currentColor: viewModel.penColor,
+                  onColorChanged: viewModel.setPenColor,
+                ),
+
+                SizedBox(width: AppSpacing.sm),
+                _VerticalDivider(),
+                SizedBox(width: AppSpacing.sm),
+
+                // Thickness slider
+                SizedBox(
+                  width: 140,
+                  child: _ThicknessSlider(
+                    currentWidth: viewModel.penWidth,
+                    onWidthChanged: viewModel.setPenWidth,
+                  ),
+                ),
+
+                SizedBox(width: AppSpacing.sm),
+                _VerticalDivider(),
+                SizedBox(width: AppSpacing.sm),
+
+                // Undo
+                IconButton(
+                  icon: const Icon(Icons.undo),
+                  onPressed: viewModel.canUndo ? viewModel.undo : null,
+                  tooltip: 'Undo',
+                  iconSize: 20,
+                ),
+
+                // Redo
+                IconButton(
+                  icon: const Icon(Icons.redo),
+                  onPressed: viewModel.canRedo ? viewModel.redo : null,
+                  tooltip: 'Redo',
+                  iconSize: 20,
+                ),
+
+                // Clear
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: viewModel.clearDrawing,
+                  tooltip: 'Clear Canvas',
+                  iconSize: 20,
+                ),
+              ],
+            ),
           ),
         );
       },

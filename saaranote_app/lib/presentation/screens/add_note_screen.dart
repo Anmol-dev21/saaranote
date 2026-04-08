@@ -99,43 +99,50 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   }
 
   Widget _buildTabSelector() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Source'),
+        AppSpacing.vGapXs,
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.4),
+            ),
+          ),
+          padding: AppSpacing.paddingXs,
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTab(
+                  icon: Icons.text_fields,
+                  label: 'Text',
+                  isSelected: _selectedTab == 0,
+                  onTap: () => setState(() => _selectedTab = 0),
+                ),
+              ),
+              Expanded(
+                child: _buildTab(
+                  icon: Icons.image,
+                  label: 'Image',
+                  isSelected: _selectedTab == 1,
+                  onTap: () => setState(() => _selectedTab = 1),
+                ),
+              ),
+              Expanded(
+                child: _buildTab(
+                  icon: Icons.picture_as_pdf,
+                  label: 'PDF',
+                  isSelected: _selectedTab == 2,
+                  onTap: () => setState(() => _selectedTab = 2),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      padding: AppSpacing.paddingXs,
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTab(
-              icon: Icons.text_fields,
-              label: 'Text',
-              isSelected: _selectedTab == 0,
-              onTap: () => setState(() => _selectedTab = 0),
-            ),
-          ),
-          Expanded(
-            child: _buildTab(
-              icon: Icons.image,
-              label: 'Image',
-              isSelected: _selectedTab == 1,
-              onTap: () => setState(() => _selectedTab = 1),
-            ),
-          ),
-          Expanded(
-            child: _buildTab(
-              icon: Icons.picture_as_pdf,
-              label: 'PDF',
-              isSelected: _selectedTab == 2,
-              onTap: () => setState(() => _selectedTab = 2),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -182,37 +189,38 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   }
 
   Widget _buildTextInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildSectionTitle('Details'),
-        AppSpacing.vGapSm,
-        TextFormField(
-          controller: _titleController,
-          decoration: _inputDecoration(
-            labelText: 'Title (optional)',
-            hintText: 'Enter note title',
+    return _buildSectionCard(
+      title: 'Details',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _titleController,
+            decoration: _inputDecoration(
+              labelText: 'Title (optional)',
+              hintText: 'Enter note title',
+            ),
+            textCapitalization: TextCapitalization.sentences,
           ),
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        AppSpacing.vGapMd,
-        TextFormField(
-          controller: _contentController,
-          decoration: _inputDecoration(
-            labelText: 'Content',
-            hintText: 'Enter your note content',
-            alignLabelWithHint: true,
+          AppSpacing.vGapMd,
+          TextFormField(
+            controller: _contentController,
+            decoration: _inputDecoration(
+              labelText: 'Content',
+              hintText: 'Enter your note content',
+              alignLabelWithHint: true,
+            ),
+            maxLines: 10,
+            textCapitalization: TextCapitalization.sentences,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter note content';
+              }
+              return null;
+            },
           ),
-          maxLines: 10,
-          textCapitalization: TextCapitalization.sentences,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter note content';
-            }
-            return null;
-          },
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -220,76 +228,80 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildSectionTitle('Details'),
-        AppSpacing.vGapSm,
-        TextFormField(
-          controller: _titleController,
-          decoration: _inputDecoration(
-            labelText: 'Title (optional)',
-            hintText: 'Enter note title',
+        _buildSectionCard(
+          title: 'Details',
+          child: TextFormField(
+            controller: _titleController,
+            decoration: _inputDecoration(
+              labelText: 'Title (optional)',
+              hintText: 'Enter note title',
+            ),
+            textCapitalization: TextCapitalization.sentences,
           ),
-          textCapitalization: TextCapitalization.sentences,
         ),
         AppSpacing.vGapMd,
-        _buildSectionTitle('Source image'),
-        AppSpacing.vGapSm,
-        
-        if (_selectedImage != null) ...[
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).dividerColor),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    _selectedImage!,
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.cover,
+        _buildSectionCard(
+          title: 'Source image',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_selectedImage != null) ...[
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        child: Image.file(
+                          _selectedImage!,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black54,
+                          ),
+                          onPressed: () => setState(() => _selectedImage = null),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                    ),
-                    onPressed: () => setState(() => _selectedImage = null),
-                  ),
-                ),
+                AppSpacing.vGapMd,
               ],
-            ),
-          ),
-          AppSpacing.vGapMd,
-        ],
-        
-        ElevatedButton.icon(
-          onPressed: _pickImage,
-          icon: const Icon(Icons.photo_library),
-          label: Text(_selectedImage == null ? 'Select Image' : 'Change Image'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+              ElevatedButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.photo_library),
+                label: Text(_selectedImage == null ? 'Select Image' : 'Change Image'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              if (_selectedImage == null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Select an image to extract text using OCR',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
         ),
-        
-        if (_selectedImage == null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Select an image to extract text using OCR',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
       ],
     );
   }
@@ -298,98 +310,99 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildSectionTitle('Details'),
-        AppSpacing.vGapSm,
-        TextFormField(
-          controller: _titleController,
-          decoration: _inputDecoration(
-            labelText: 'Title (optional)',
-            hintText: 'Will be auto-generated if empty',
+        _buildSectionCard(
+          title: 'Details',
+          child: TextFormField(
+            controller: _titleController,
+            decoration: _inputDecoration(
+              labelText: 'Title (optional)',
+              hintText: 'Will be auto-generated if empty',
+            ),
+            textCapitalization: TextCapitalization.sentences,
           ),
-          textCapitalization: TextCapitalization.sentences,
         ),
         AppSpacing.vGapMd,
-        _buildSectionTitle('Source PDF'),
-        AppSpacing.vGapSm,
-        if (_selectedPdf != null) ...[
-          Container(
-            padding: AppSpacing.paddingMd,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.picture_as_pdf,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 36,
-                ),
-                AppSpacing.hGapSm,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        _buildSectionCard(
+          title: 'Source PDF',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_selectedPdf != null) ...[
+                Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: Row(
                     children: [
-                      const Text(
-                        'PDF Selected',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      Icon(
+                        Icons.picture_as_pdf,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 36,
                       ),
-                      AppSpacing.vGapXs,
-                      Text(
-                        _selectedPdf!.path.split('/').last,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      AppSpacing.hGapSm,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'PDF Selected',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            AppSpacing.vGapXs,
+                            Text(
+                              _selectedPdf!.path.split('/').last,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: AppColors.errorLight),
+                        onPressed: () => setState(() => _selectedPdf = null),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.close, color: AppColors.errorLight),
-                  onPressed: () => setState(() => _selectedPdf = null),
+              ] else ...[
+                ElevatedButton.icon(
+                  onPressed: _pickPdf,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Select PDF File'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+                AppSpacing.vGapXs,
+                Text(
+                  'Select a PDF file to extract text and create a note',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
-            ),
+            ],
           ),
-        ] else ...[
-          ElevatedButton.icon(
-            onPressed: _pickPdf,
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Select PDF File'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-          AppSpacing.vGapXs,
-          Text(
-            'Select a PDF file to extract text and create a note',
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ],
     );
   }
 
   Widget _buildOptions() {
-    return Container(
-      padding: AppSpacing.paddingMd,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.4)),
-      ),
+    return _buildSectionCard(
+      title: 'Options',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Options'),
           SwitchListTile(
             title: const Text('Generate Summary'),
             subtitle: const Text('Automatically create summary'),
@@ -438,6 +451,31 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: AppSpacing.paddingMd,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(title),
+          AppSpacing.vGapSm,
+          child,
+        ],
+      ),
     );
   }
 

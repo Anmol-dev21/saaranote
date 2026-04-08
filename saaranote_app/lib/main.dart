@@ -9,6 +9,7 @@ import 'data/datasources/local/database_helper.dart';
 import 'data/repositories/note_repository_impl.dart';
 import 'data/repositories/summary_repository_impl.dart';
 import 'data/repositories/flashcard_repository_impl.dart';
+import 'data/repositories/chat_repository_impl.dart';
 
 // Domain layer
 import 'domain/usecases/get_all_notes_usecase.dart';
@@ -21,6 +22,7 @@ import 'domain/usecases/create_note_from_pdf_usecase.dart';
 import 'domain/usecases/get_summaries_for_note_usecase.dart';
 import 'domain/usecases/get_flashcards_for_note_usecase.dart';
 import 'domain/usecases/search_notes_usecase.dart';
+import 'domain/usecases/ask_question_usecase.dart';
 
 // Core services
 import 'core/services/ocr_service.dart';
@@ -28,14 +30,9 @@ import 'core/services/pdf_export_service.dart';
 import 'core/services/pdf_text_service.dart';
 import 'core/services/rich_text_service.dart';
 import 'core/services/drawing_service.dart';
-<<<<<<< Updated upstream
-=======
 import 'core/services/retrieval_service.dart';
 import 'core/services/generation_service.dart';
-import 'core/services/offline_qa_service.dart';
 import 'core/services/settings_service.dart';
-import 'core/ai_engine.dart';
->>>>>>> Stashed changes
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
@@ -69,19 +66,9 @@ class MyApp extends StatelessWidget {
     final pdfTextService = PdfTextService();
     final richTextService = RichTextService();
     final drawingService = DrawingService();
-<<<<<<< Updated upstream
-=======
-    final drawingLocalDataSource = DrawingLocalDataSource(databaseHelper, drawingService);
-    final aiEngine = AIEngine();
-    final retrievalService = RetrievalService(indexRepository);
     final queryProcessor = QueryProcessor();
     final generationService = GenerationService();
-    final offlineQaService = OfflineQaService(
-      retrievalService: retrievalService,
-      queryProcessor: queryProcessor,
-    );
     final settingsService = SettingsService();
->>>>>>> Stashed changes
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -112,6 +99,12 @@ class MyApp extends StatelessWidget {
     final getSummariesForNoteUseCase = GetSummariesForNoteUseCase(summaryRepository);
     final getFlashcardsForNoteUseCase = GetFlashcardsForNoteUseCase(flashcardRepository);
     final searchNotesUseCase = SearchNotesUseCase(noteRepository);
+    final chatRepository = ChatRepositoryImpl(databaseHelper);
+    final askQuestionUseCase = AskQuestionUseCase(
+      chatRepository,
+      generationService,
+      queryProcessor,
+    );
 
     return MultiProvider(
       providers: [

@@ -1,4 +1,5 @@
 import '../entities/note.dart';
+import '../entities/rich_text_content.dart' as domain;
 import '../repositories/note_repository.dart';
 
 /// Use case for updating an existing note
@@ -24,6 +25,9 @@ class UpdateNoteUseCase {
       title: params.title ?? existingNote.title,
       content: params.content ?? existingNote.content,
       color: params.color ?? existingNote.color,
+      richContent: params.richContent ?? existingNote.richContent,
+      drawingIds: params.drawingIds ?? existingNote.drawingIds,
+      contentType: params.contentType ?? existingNote.contentType,
       updatedAt: DateTime.now(),
     );
 
@@ -37,12 +41,18 @@ class UpdateNoteParams {
   final String? title;
   final String? content;
   final String? color;
+  final domain.RichTextContent? richContent;
+  final List<String>? drawingIds;
+  final ContentType? contentType;
 
   UpdateNoteParams({
     required this.noteId,
     this.title,
     this.content,
     this.color,
+    this.richContent,
+    this.drawingIds,
+    this.contentType,
   });
 }
 

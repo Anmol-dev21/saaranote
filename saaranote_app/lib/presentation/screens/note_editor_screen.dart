@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/note_editor_viewmodel.dart';
 import '../viewmodels/create_note_viewmodel.dart';
+import '../viewmodels/note_viewmodel.dart';
 import '../widgets/rich_text_toolbar.dart';
 import '../widgets/drawing_canvas.dart';
 import '../widgets/drawing_tools_panel.dart';
+import '../widgets/rich_text_editing_controller.dart';
 import '../../core/design_system/app_spacing.dart';
 import '../../core/design_system/app_typography.dart';
 import '../../domain/entities/note.dart';
@@ -31,12 +33,17 @@ class NoteEditorScreen extends StatefulWidget {
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  late final RichTextEditingController _contentController;
   final _contentFocusNode = FocusNode();
+  TextEditingValue _lastContentValue = const TextEditingValue();
+  bool _suppressControllerListener = false;
 
   @override
   void initState() {
     super.initState();
+
+    _contentController = RichTextEditingController();
+    _contentController.addListener(_handleContentChanged);
     
     // Load existing note if editing
     if (widget.existingNote != null) {
@@ -44,13 +51,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       _contentController.text = widget.existingNote!.content;
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<NoteEditorViewModel>().loadNote(widget.existingNote!);
+        final viewModel = context.read<NoteEditorViewModel>();
+        viewModel.loadNote(widget.existingNote!);
+        if (widget.existingNote!.id != null) {
+          viewModel.loadDrawings(widget.existingNote!.id!);
+        }
       });
     }
-
-    // Listen to text changes
-    _contentController.addListener(_onTextChanged);
-    _contentFocusNode.addListener(_onFocusChanged);
   }
 
   @override
@@ -61,16 +68,25 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     super.dispose();
   }
 
-  void _onTextChanged() {
+  void _handleContentChanged() {
+    if (_suppressControllerListener || !mounted) {
+      return;
+    }
+
+    final value = _contentController.value;
+    if (value == _lastContentValue) {
+      return;
+    }
+
     final viewModel = context.read<NoteEditorViewModel>();
-    viewModel.updateText(_contentController.text);
+    viewModel.updateTextEditingValue(value);
+    _lastContentValue = value;
   }
 
-  void _onFocusChanged() {
-    if (_contentFocusNode.hasFocus) {
-      final viewModel = context.read<NoteEditorViewModel>();
-      viewModel.updateTextSelection(_contentController.selection);
-    }
+  void _syncControllerSpans(NoteEditorViewModel viewModel) {
+    _suppressControllerListener = true;
+    _contentController.updateSpans(viewModel.textSpans);
+    _suppressControllerListener = false;
   }
 
   @override
@@ -86,32 +102,50 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Mode selector
-          _buildModeSelector(),
-          
-          // Title input
-          _buildTitleInput(),
-          
-          // Content area (switches based on mode)
-          Expanded(
-            child: _buildContentArea(),
+      body: SafeArea(
+        bottom: false,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Title input
+              _buildTitleInput(),
+
+              // Content and drawing sections
+              Expanded(
+                child: _buildMainContent(),
+              ),
+
+              // Inline toolbar for draw mode
+              Consumer<NoteEditorViewModel>(
+                builder: (context, viewModel, child) {
+                  if (viewModel.mode != EditorMode.draw) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildToolbar(mode: viewModel.mode);
+                },
+              ),
+            ],
           ),
-          
-          // Toolbar (switches based on mode)
-          _buildToolbar(),
-        ],
+        ),
+      ),
+      bottomNavigationBar: Consumer<NoteEditorViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.mode == EditorMode.draw) {
+            return const SizedBox.shrink();
+          }
+          return _buildToolbar(mode: viewModel.mode);
+        },
       ),
     );
   }
 
-  Widget _buildModeSelector() {
+  Widget _buildModeSelector({EdgeInsetsGeometry? outerPadding}) {
     return Consumer<NoteEditorViewModel>(
       builder: (context, viewModel, child) {
         final theme = Theme.of(context);
         return Container(
-          margin: AppSpacing.pagePadding.add(AppSpacing.verticalSm),
+          margin: outerPadding ?? AppSpacing.pagePadding.add(AppSpacing.verticalSm),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -119,8 +153,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               color: theme.dividerColor.withOpacity(0.4),
             ),
           ),
-          padding: AppSpacing.paddingXs,
-          child: Row(
+          padding: AppSpacing.paddingSm,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Mode',
@@ -128,32 +163,30 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: SegmentedButton<EditorMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: EditorMode.text,
-                      icon: Icon(Icons.text_fields, size: 18),
-                      label: Text('Text'),
-                    ),
-                    ButtonSegment(
-                      value: EditorMode.draw,
-                      icon: Icon(Icons.draw, size: 18),
-                      label: Text('Draw'),
-                    ),
-                    ButtonSegment(
-                      value: EditorMode.hybrid,
-                      icon: Icon(Icons.space_dashboard, size: 18),
-                      label: Text('Hybrid'),
-                    ),
-                  ],
-                  selected: {viewModel.mode},
-                  onSelectionChanged: (Set<EditorMode> newSelection) {
-                    viewModel.setMode(newSelection.first);
-                  },
-                  showSelectedIcon: false,
-                ),
+              AppSpacing.vGapXs,
+              SegmentedButton<EditorMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: EditorMode.text,
+                    icon: Icon(Icons.text_fields, size: 18),
+                    label: Text('Text'),
+                  ),
+                  ButtonSegment(
+                    value: EditorMode.draw,
+                    icon: Icon(Icons.draw, size: 18),
+                    label: Text('Draw'),
+                  ),
+                  ButtonSegment(
+                    value: EditorMode.hybrid,
+                    icon: Icon(Icons.space_dashboard, size: 18),
+                    label: Text('Hybrid'),
+                  ),
+                ],
+                selected: {viewModel.mode},
+                onSelectionChanged: (Set<EditorMode> newSelection) {
+                  viewModel.setMode(newSelection.first);
+                },
+                showSelectedIcon: false,
               ),
             ],
           ),
@@ -164,39 +197,67 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   Widget _buildTitleInput() {
     final theme = Theme.of(context);
-    return Container(
-      margin: AppSpacing.pagePadding,
-      padding: AppSpacing.paddingMd,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(
-          color: theme.dividerColor.withOpacity(0.4),
-        ),
-      ),
-      child: TextFormField(
-        controller: _titleController,
-        style: AppTypography.h3(color: theme.colorScheme.onSurface),
-        decoration: InputDecoration(
-          hintText: 'Note Title',
-          hintStyle: AppTypography.h3(
-            color: theme.colorScheme.onSurfaceVariant,
+    return Padding(
+      padding: AppSpacing.pagePadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Title',
+            style: AppTypography.bodySmall(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          border: InputBorder.none,
-        ),
-        textCapitalization: TextCapitalization.sentences,
+          AppSpacing.vGapXs,
+          Container(
+            padding: AppSpacing.paddingMd,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: AppSpacing.borderRadiusMd,
+              border: Border.all(
+                color: theme.dividerColor.withOpacity(0.4),
+              ),
+            ),
+            child: TextFormField(
+              controller: _titleController,
+              style: AppTypography.h3(color: theme.colorScheme.onSurface),
+              decoration: InputDecoration(
+                hintText: 'Note Title',
+                hintStyle: AppTypography.h3(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                border: InputBorder.none,
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildContentArea() {
+  Widget _buildMainContent() {
     return Consumer<NoteEditorViewModel>(
       builder: (context, viewModel, child) {
         switch (viewModel.mode) {
           case EditorMode.text:
-            return _buildTextEditor();
+            return Column(
+              children: [
+                Expanded(
+                  child: _buildTextEditor(),
+                ),
+                _buildModeSelector(),
+              ],
+            );
           case EditorMode.draw:
-            return _buildDrawingSurface();
+            return Column(
+              children: [
+                _buildModeSelector(),
+                Expanded(
+                  child: _buildDrawingSurface(),
+                ),
+              ],
+            );
           case EditorMode.hybrid:
             return _buildHybridEditor();
         }
@@ -204,37 +265,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-<<<<<<< Updated upstream
-  Widget _buildTextEditor() {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: TextField(
-        controller: _contentController,
-        focusNode: _contentFocusNode,
-        style: AppTypography.noteContent(),
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        decoration: InputDecoration(
-          hintText: 'Start typing or tap formatting buttons below...',
-          hintStyle: AppTypography.noteContent().copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-        ),
-        textCapitalization: TextCapitalization.sentences,
-        onChanged: (text) {
-          // Text is automatically synced via listener
-        },
-      ),
-=======
   Widget _buildTextEditor({EdgeInsetsGeometry? outerPadding}) {
     return Consumer<NoteEditorViewModel>(
       builder: (context, viewModel, child) {
         final theme = Theme.of(context);
+        final viewInsets = MediaQuery.of(context).viewInsets;
+        _syncControllerSpans(viewModel);
         return Container(
           margin: outerPadding ?? AppSpacing.pagePadding.add(AppSpacing.verticalSm),
           padding: AppSpacing.paddingMd,
@@ -245,74 +281,109 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               color: theme.dividerColor.withOpacity(0.4),
             ),
           ),
-          child: TextField(
-            controller: _contentController,
-            focusNode: _contentFocusNode,
-            style: AppTypography.noteContent(
-              color: theme.colorScheme.onSurface,
-            ),
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            decoration: InputDecoration(
-              hintText: 'Start typing or tap formatting buttons below...',
-              hintStyle: AppTypography.noteContent(
-                color: theme.colorScheme.onSurfaceVariant,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Content',
+                style: AppTypography.bodySmall(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-              border: InputBorder.none,
-            ),
-            textCapitalization: TextCapitalization.sentences,
-            onChanged: (text) {
-              // Text is automatically synced via listener
-            },
+              AppSpacing.vGapXs,
+              Expanded(
+                child: TextField(
+                  controller: _contentController,
+                  focusNode: _contentFocusNode,
+                  style: AppTypography.noteContent(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  scrollPadding: EdgeInsets.only(
+                    bottom: viewInsets.bottom + 120,
+                  ),
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    hintText: 'Start typing or tap formatting buttons below...',
+                    hintStyle: AppTypography.noteContent(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    border: InputBorder.none,
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+              ),
+            ],
           ),
         );
       },
->>>>>>> Stashed changes
     );
   }
 
   Widget _buildHybridEditor() {
-    return Padding(
-      padding: AppSpacing.pagePadding.add(AppSpacing.verticalSm),
-      child: Column(
-        children: [
-          // Text section (upper half)
-          Expanded(
-            flex: 1,
-            child: _buildTextEditor(outerPadding: EdgeInsets.zero),
-          ),
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final isKeyboardOpen = viewInsets.bottom > 0;
 
-          AppSpacing.vGapSm,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight = constraints.maxHeight;
+        const minTextHeight = 200.0;
+        final minDrawingHeight = isKeyboardOpen ? 120.0 : 200.0;
+        const modeSelectorHeight = 96.0;
 
-          // Drawing section (lower half)
-          Expanded(
-            flex: 1,
-            child: _buildDrawingSurface(outerPadding: EdgeInsets.zero),
+        double textHeight = availableHeight * (isKeyboardOpen ? 0.6 : 0.5);
+        double drawingHeight =
+            availableHeight - textHeight - modeSelectorHeight - AppSpacing.sm * 2;
+
+        if (drawingHeight < minDrawingHeight) {
+          drawingHeight = minDrawingHeight;
+          textHeight =
+              availableHeight - drawingHeight - modeSelectorHeight - AppSpacing.sm * 2;
+        }
+
+        if (textHeight < minTextHeight) {
+          textHeight = minTextHeight;
+        }
+
+        return SingleChildScrollView(
+          padding: AppSpacing.pagePadding.add(AppSpacing.verticalSm),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: availableHeight),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: textHeight,
+                  child: _buildTextEditor(outerPadding: EdgeInsets.zero),
+                ),
+                AppSpacing.vGapSm,
+                _buildModeSelector(outerPadding: EdgeInsets.zero),
+                SizedBox(
+                  height: drawingHeight,
+                  child: _buildDrawingSurface(outerPadding: EdgeInsets.zero),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildToolbar() {
-    return Consumer<NoteEditorViewModel>(
-      builder: (context, viewModel, child) {
-        final content = switch (viewModel.mode) {
-          EditorMode.text => const RichTextToolbar(),
-          EditorMode.draw => const DrawingToolsPanel(),
-          EditorMode.hybrid => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                RichTextToolbar(),
-                DrawingToolsPanel(),
-              ],
-            ),
-        };
+  Widget _buildToolbar({required EditorMode mode}) {
+    final content = switch (mode) {
+      EditorMode.text => const RichTextToolbar(),
+      EditorMode.draw => const DrawingToolsPanel(),
+      EditorMode.hybrid => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            RichTextToolbar(),
+            DrawingToolsPanel(),
+          ],
+        ),
+    };
 
-        return SafeArea(top: false, child: content);
-      },
-    );
+    return SafeArea(top: false, child: content);
   }
 
   Widget _buildDrawingSurface({EdgeInsetsGeometry? outerPadding}) {
@@ -326,9 +397,25 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           color: theme.dividerColor.withOpacity(0.4),
         ),
       ),
-      child: ClipRRect(
-        borderRadius: AppSpacing.borderRadiusMd,
-        child: const DrawingCanvas(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: AppSpacing.paddingSm,
+            child: Text(
+              'Drawing',
+              style: AppTypography.bodySmall(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: AppSpacing.borderRadiusMd,
+              child: const DrawingCanvas(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -341,56 +428,62 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
-      );
-      return;
-    }
-
-    if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter some content')),
-      );
-      return;
-    }
-
     final editorViewModel = context.read<NoteEditorViewModel>();
     final createViewModel = context.read<CreateNoteViewModel>();
+    final noteViewModel = context.read<NoteViewModel>();
+
+    final hasDrawing = editorViewModel.hasActiveDrawing;
+
+    if (content.isEmpty && !hasDrawing) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add content or a drawing before saving')),
+      );
+      return;
+    }
+
+    final safeContent = content.isEmpty && hasDrawing
+        ? 'Drawing note'
+        : content;
 
     try {
-      // Save drawing if in draw or hybrid mode
-      if (editorViewModel.mode == EditorMode.draw || 
-          editorViewModel.mode == EditorMode.hybrid) {
+      if (editorViewModel.hasPendingStrokes) {
         editorViewModel.saveDrawing();
       }
 
-      // Get rich text content if available
-      // TODO: In the future, create a new use case that accepts richContent and drawingIds
-      // final richContent = editorViewModel.getRichTextContent();
-      // final drawingIds = editorViewModel.getDrawingIds();
-
-      // For now, use the existing createNoteFromText method
-      // In a real implementation, you'd create a new use case that accepts
-      // richContent and drawingIds parameters
-      
       final success = await createViewModel.createNoteFromText(
         title: title,
-        content: content,
+        content: safeContent,
         generateSummary: true,
         generateFlashcards: true,
       );
 
       if (success && mounted) {
-        // Reset editor
+        final createdNote = createViewModel.createdNote;
+        if (createdNote != null) {
+          if (editorViewModel.hasDrawings) {
+            await editorViewModel.persistDrawings(createdNote.id!);
+          }
+
+          final richContent = editorViewModel.getRichTextContent();
+          final drawingIds = editorViewModel.getDrawingIds();
+          final contentType = editorViewModel.contentType;
+
+          if (drawingIds.isNotEmpty || richContent != null) {
+            await noteViewModel.updateNote(
+              noteId: createdNote.id!,
+              drawingIds: drawingIds.isEmpty ? null : drawingIds,
+              richContent: richContent,
+              contentType: contentType,
+            );
+          }
+        }
+
         editorViewModel.reset();
-        
-        // Show success message
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Note saved successfully')),
         );
-        
-        // Go back
+
         Navigator.of(context).pop();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

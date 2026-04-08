@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/note_detail_viewmodel.dart';
-<<<<<<< Updated upstream
-=======
 import '../../domain/entities/drawing.dart';
 import '../../domain/entities/rich_text_content.dart' as domain;
 import '../../core/design_system/app_components.dart';
 import '../../core/design_system/app_spacing.dart';
 import '../../core/design_system/app_typography.dart';
->>>>>>> Stashed changes
 
 /// Screen displaying note details with summaries and flashcards
 class NoteDetailScreen extends StatefulWidget {
@@ -27,7 +24,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Load note details when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NoteDetailViewModel>().loadNoteDetails(widget.noteId);
     });
@@ -36,6 +32,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Note Details'),
@@ -111,7 +108,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Note Title
                   Text(
                     note.title,
                     style: AppTypography.h1(
@@ -119,8 +115,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ),
                   ),
                   AppSpacing.vGapSm,
-                  
-                  // Metadata
+
                   Wrap(
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.sm,
@@ -142,18 +137,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ],
                   ),
                   AppSpacing.vGapLg,
-                  
-                  // Note Content
+
                   _buildSection(
                     title: 'Content',
                     icon: Icons.article,
-<<<<<<< Updated upstream
-                    child: SelectableText(
-                      note.content,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-=======
                     child: note.hasRichContent
                         ? SelectableText.rich(
                             _buildRichTextSpan(note.richContent!, contentStyle),
@@ -164,7 +151,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                           ),
                   ),
 
-                  // Drawings Section
                   if (viewModel.hasDrawings) ...[
                     AppSpacing.vGapLg,
                     _buildSection(
@@ -196,12 +182,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                             ),
                           );
                         }).toList(),
->>>>>>> Stashed changes
                       ),
                     ),
-                  ),
-                  
-                  // Summary Section
+                  ],
+
                   if (viewModel.hasSummaries) ...[
                     AppSpacing.vGapLg,
                     _buildSection(
@@ -210,21 +194,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: viewModel.summaries.map((summary) {
-<<<<<<< Updated upstream
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue[200]!),
-                            ),
-                            child: SelectableText(
-                              summary.summaryText,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                height: 1.5,
-=======
                           return Padding(
                             padding: AppSpacing.verticalXs,
                             child: Container(
@@ -242,7 +211,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                                   height: 1.6,
                                   color: theme.colorScheme.onSurface,
                                 ),
->>>>>>> Stashed changes
                               ),
                             ),
                           );
@@ -250,8 +218,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       ),
                     ),
                   ],
-                  
-                  // Flashcards Section
+
                   if (viewModel.hasFlashcards) ...[
                     AppSpacing.vGapLg,
                     _buildSection(
@@ -335,13 +302,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   Future<void> _handleExportPdf(BuildContext context) async {
     final viewModel = context.read<NoteDetailViewModel>();
-    
-    // Call the viewmodel to export PDF
     await viewModel.exportNoteAsPdf();
-    
-    // Show success or error message
+
     if (!mounted) return;
-    
+
     if (viewModel.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -383,44 +347,39 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     required Widget child,
   }) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppCard(
-          padding: AppSpacing.cardContentPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return AppCard(
+      padding: AppSpacing.cardContentPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    height: 32,
-                    width: 32,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  AppSpacing.hGapSm,
-                  Text(
-                    title,
-                    style: AppTypography.h3(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ],
+              Container(
+                height: 32,
+                width: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-              AppSpacing.vGapSm,
-              child,
+              AppSpacing.hGapSm,
+              Text(
+                title,
+                style: AppTypography.h3(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
             ],
           ),
-        ),
-      ],
+          AppSpacing.vGapSm,
+          child,
+        ],
+      ),
     );
   }
 
@@ -477,5 +436,145 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (level >= 4) return Colors.green;
     if (level >= 2) return Colors.orange;
     return Colors.red;
+  }
+
+  TextSpan _buildRichTextSpan(
+    domain.RichTextContent content,
+    TextStyle baseStyle,
+  ) {
+    if (content.spans.isEmpty) {
+      return TextSpan(text: content.plainText, style: baseStyle);
+    }
+
+    final spans = <TextSpan>[];
+    int current = 0;
+
+    for (final span in content.spans) {
+      if (span.start > current) {
+        spans.add(TextSpan(
+          text: content.plainText.substring(current, span.start),
+          style: baseStyle,
+        ));
+      }
+
+      final style = _buildTextStyle(span.style, baseStyle);
+      spans.add(TextSpan(
+        text: content.plainText.substring(span.start, span.end),
+        style: style,
+      ));
+      current = span.end;
+    }
+
+    if (current < content.plainText.length) {
+      spans.add(TextSpan(
+        text: content.plainText.substring(current),
+        style: baseStyle,
+      ));
+    }
+
+    return TextSpan(style: baseStyle, children: spans);
+  }
+
+  TextStyle _buildTextStyle(domain.TextStyle style, TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      fontWeight: style.bold ? FontWeight.w600 : baseStyle.fontWeight,
+      fontStyle: style.italic ? FontStyle.italic : baseStyle.fontStyle,
+      decoration: style.underline ? TextDecoration.underline : baseStyle.decoration,
+      fontSize: style.fontSize ?? baseStyle.fontSize,
+      color: style.textColor != null ? _parseHexColor(style.textColor!) : baseStyle.color,
+      backgroundColor: style.highlightColor != null
+          ? _parseHexColor(style.highlightColor!)
+          : baseStyle.backgroundColor,
+    );
+  }
+
+  Color _parseHexColor(String value) {
+    final hex = value.replaceFirst('#', '');
+    final colorValue = int.parse(hex, radix: 16);
+    return Color(0xFF000000 | colorValue);
+  }
+}
+
+class _DrawingPreviewPainter extends CustomPainter {
+  final Drawing drawing;
+
+  _DrawingPreviewPainter({
+    required this.drawing,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.saveLayer(Offset.zero & size, Paint());
+    for (final stroke in drawing.strokes) {
+      _drawStroke(canvas, stroke);
+    }
+    canvas.restore();
+  }
+
+  void _drawStroke(Canvas canvas, DrawingStroke stroke) {
+    if (stroke.points.isEmpty) return;
+
+    final paint = Paint()
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke.style.width;
+
+    final colorHex = stroke.style.color.replaceFirst('#', '');
+    final colorValue = int.parse(colorHex, radix: 16);
+    final baseColor = Color(0xFF000000 | colorValue);
+
+    paint.color = baseColor.withOpacity(stroke.style.opacity);
+
+    switch (stroke.style.type) {
+      case StrokeType.pen:
+        break;
+      case StrokeType.highlighter:
+        paint.strokeWidth = stroke.style.width * 1.5;
+        paint.color = paint.color.withOpacity(0.4);
+        break;
+      case StrokeType.eraser:
+        paint.color = Colors.white;
+        paint.blendMode = BlendMode.clear;
+        break;
+    }
+
+    final path = Path();
+    if (stroke.points.length == 1) {
+      final point = stroke.points.first;
+      canvas.drawCircle(
+        Offset(point.x, point.y),
+        paint.strokeWidth / 2,
+        paint..style = PaintingStyle.fill,
+      );
+    } else {
+      path.moveTo(stroke.points.first.x, stroke.points.first.y);
+
+      for (int i = 1; i < stroke.points.length - 1; i++) {
+        final current = stroke.points[i];
+        final next = stroke.points[i + 1];
+
+        final controlX = (current.x + next.x) / 2;
+        final controlY = (current.y + next.y) / 2;
+
+        path.quadraticBezierTo(
+          current.x,
+          current.y,
+          controlX,
+          controlY,
+        );
+      }
+
+      final lastPoint = stroke.points.last;
+      path.lineTo(lastPoint.x, lastPoint.y);
+
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DrawingPreviewPainter oldDelegate) {
+    return oldDelegate.drawing.id != drawing.id ||
+        oldDelegate.drawing.totalPoints != drawing.totalPoints;
   }
 }
