@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, // Incremented from 2 to 3 for file organization support
+      version: 4, // Incremented for AI chat and drawing persistence
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
       onOpen: _onOpen,
@@ -99,6 +99,19 @@ class DatabaseHelper {
     await db.execute(
         'CREATE INDEX idx_flashcards_note_id ON flashcards(note_id)');
 
+    // Drawings table
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS drawings (
+        id TEXT PRIMARY KEY,
+        note_id INTEGER NOT NULL,
+        drawing_data TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_drawings_note_id ON drawings(note_id)');
+
     // File metadata table (for file organization system)
     if (version >= 3) {
       await db.execute('''
@@ -138,14 +151,11 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
       await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
     }
-<<<<<<< Updated upstream
-=======
-
     // AI Chat system tables (version 4+)
     if (version >= 4) {
       // Document chunks for AI retrieval
       await db.execute('''
-        CREATE TABLE document_chunks (
+        CREATE TABLE IF NOT EXISTS document_chunks (
           id $idType,
           file_metadata_id $integerType NOT NULL,
           chunk_index $integerType NOT NULL,
@@ -160,7 +170,7 @@ class DatabaseHelper {
 
       // Chat sessions
       await db.execute('''
-        CREATE TABLE chat_sessions (
+        CREATE TABLE IF NOT EXISTS chat_sessions (
           id $idType,
           title $textType,
           created_at $integerType NOT NULL,
@@ -171,7 +181,7 @@ class DatabaseHelper {
 
       // Chat messages
       await db.execute('''
-        CREATE TABLE chat_messages (
+        CREATE TABLE IF NOT EXISTS chat_messages (
           id $idType,
           session_id $integerType NOT NULL,
           role $textType NOT NULL CHECK(role IN ('user', 'assistant')),
@@ -184,7 +194,7 @@ class DatabaseHelper {
 
       // Message sources (citations)
       await db.execute('''
-        CREATE TABLE message_sources (
+        CREATE TABLE IF NOT EXISTS message_sources (
           id $idType,
           message_id $integerType NOT NULL,
           file_metadata_id $integerType NOT NULL,
@@ -197,12 +207,11 @@ class DatabaseHelper {
       ''');
 
       // Create indexes for AI chat
-      await db.execute('CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)');
-      await db.execute('CREATE INDEX idx_messages_session ON chat_messages(session_id)');
-      await db.execute('CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)');
-      await db.execute('CREATE INDEX idx_sources_message ON message_sources(message_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_chunks_file ON document_chunks(file_metadata_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages(session_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON chat_messages(timestamp DESC)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sources_message ON message_sources(message_id)');
     }
->>>>>>> Stashed changes
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -277,9 +286,6 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
       await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
     }
-<<<<<<< Updated upstream
-=======
-
     // Version 3 -> 4: Add AI chat system
     if (oldVersion < 4) {
       const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
@@ -288,8 +294,8 @@ class DatabaseHelper {
       const integerType = 'INTEGER NOT NULL';
 
       // Document chunks for AI retrieval
-      await db.execute('''
-        CREATE TABLE document_chunks (
+            await db.execute('''
+        CREATE TABLE IF NOT EXISTS document_chunks (
           id $idType,
           file_metadata_id $integerType NOT NULL,
           chunk_index $integerType NOT NULL,
@@ -303,8 +309,8 @@ class DatabaseHelper {
       await _createDocumentChunksFts(db);
 
       // Chat sessions
-      await db.execute('''
-        CREATE TABLE chat_sessions (
+            await db.execute('''
+        CREATE TABLE IF NOT EXISTS chat_sessions (
           id $idType,
           title $textType,
           created_at $integerType NOT NULL,
@@ -314,8 +320,8 @@ class DatabaseHelper {
       ''');
 
       // Chat messages
-      await db.execute('''
-        CREATE TABLE chat_messages (
+            await db.execute('''
+        CREATE TABLE IF NOT EXISTS chat_messages (
           id $idType,
           session_id $integerType NOT NULL,
           role $textType NOT NULL CHECK(role IN ('user', 'assistant')),
@@ -327,8 +333,8 @@ class DatabaseHelper {
       ''');
 
       // Message sources (citations)
-      await db.execute('''
-        CREATE TABLE message_sources (
+            await db.execute('''
+        CREATE TABLE IF NOT EXISTS message_sources (
           id $idType,
           message_id $integerType NOT NULL,
           file_metadata_id $integerType NOT NULL,
@@ -341,12 +347,11 @@ class DatabaseHelper {
       ''');
 
       // Create indexes for AI chat
-      await db.execute('CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)');
-      await db.execute('CREATE INDEX idx_messages_session ON chat_messages(session_id)');
-      await db.execute('CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)');
-      await db.execute('CREATE INDEX idx_sources_message ON message_sources(message_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_chunks_file ON document_chunks(file_metadata_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages(session_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON chat_messages(timestamp DESC)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sources_message ON message_sources(message_id)');
     }
->>>>>>> Stashed changes
   }
 
   Future<void> close() async {

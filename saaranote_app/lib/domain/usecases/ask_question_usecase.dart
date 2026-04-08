@@ -26,7 +26,6 @@ class AskQuestionUseCase {
 
   /// Execute the use case
   Future<ChatMessage> execute(AskQuestionParams params) async {
-    // 1. Save user message
     await _chatRepository.addMessage(
       ChatMessage(
         content: params.question,
@@ -38,12 +37,10 @@ class AskQuestionUseCase {
     );
 
     try {
-      // 2. Generate response using offline QA if available
       final response = _offlineQaService != null
           ? await _offlineQaService!.answer(query: params.question)
           : await _generateWithLegacyPipeline(params.question);
 
-      // 5. Save assistant message
       final assistantMessage = await _chatRepository.addMessage(
         ChatMessage(
           content: response.content,
@@ -57,10 +54,9 @@ class AskQuestionUseCase {
 
       return assistantMessage;
     } catch (e) {
-      // Error handling: save error message
       return await _chatRepository.addMessage(
         ChatMessage(
-          content: "Sorry, I encountered an error: ${e.toString()}",
+          content: 'Sorry, I encountered an error: ${e.toString()}',
           role: MessageRole.assistant,
           timestamp: DateTime.now(),
           status: MessageStatus.error,

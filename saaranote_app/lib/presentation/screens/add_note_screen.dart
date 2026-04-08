@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../viewmodels/create_note_viewmodel.dart';
+import '../../core/design_system/app_spacing.dart';
+import '../../core/design_system/app_colors.dart';
 
 /// Screen for adding a new note from text, image, or PDF
 class AddNoteScreen extends StatefulWidget {
@@ -41,6 +43,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: _saveNote,
+            tooltip: 'Save',
           ),
         ],
       ),
@@ -61,14 +64,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
           return SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildTabSelector(),
-                    const SizedBox(height: 16),
+                    AppSpacing.vGapMd,
                     
                     if (_selectedTab == 0) ...[
                       _buildTextInput(),
@@ -78,11 +81,11 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                       _buildPdfInput(),
                     ],
                     
-                    const SizedBox(height: 16),
+                    AppSpacing.vGapMd,
                     _buildOptions(),
                     
                     if (viewModel.hasError) ...[
-                      const SizedBox(height: 16),
+                      AppSpacing.vGapMd,
                       _buildErrorMessage(viewModel.errorMessage!),
                     ],
                   ],
@@ -96,39 +99,50 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   }
 
   Widget _buildTabSelector() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTab(
-              icon: Icons.text_fields,
-              label: 'Text',
-              isSelected: _selectedTab == 0,
-              onTap: () => setState(() => _selectedTab = 0),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Source'),
+        AppSpacing.vGapXs,
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.4),
             ),
           ),
-          Expanded(
-            child: _buildTab(
-              icon: Icons.image,
-              label: 'Image',
-              isSelected: _selectedTab == 1,
-              onTap: () => setState(() => _selectedTab = 1),
-            ),
+          padding: AppSpacing.paddingXs,
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTab(
+                  icon: Icons.text_fields,
+                  label: 'Text',
+                  isSelected: _selectedTab == 0,
+                  onTap: () => setState(() => _selectedTab = 0),
+                ),
+              ),
+              Expanded(
+                child: _buildTab(
+                  icon: Icons.image,
+                  label: 'Image',
+                  isSelected: _selectedTab == 1,
+                  onTap: () => setState(() => _selectedTab = 1),
+                ),
+              ),
+              Expanded(
+                child: _buildTab(
+                  icon: Icons.picture_as_pdf,
+                  label: 'PDF',
+                  isSelected: _selectedTab == 2,
+                  onTap: () => setState(() => _selectedTab = 2),
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _buildTab(
-              icon: Icons.picture_as_pdf,
-              label: 'PDF',
-              isSelected: _selectedTab == 2,
-              onTap: () => setState(() => _selectedTab = 2),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -141,23 +155,30 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected
+              ? Theme.of(context).colorScheme.surface
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: isSelected ? Theme.of(context).primaryColor : Colors.grey[600],
+              size: 18,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 8),
+            AppSpacing.hGapXs,
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[600],
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -168,37 +189,38 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   }
 
   Widget _buildTextInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextFormField(
-          controller: _titleController,
-          decoration: const InputDecoration(
-            labelText: 'Title (optional)',
-            hintText: 'Enter note title',
-            border: OutlineInputBorder(),
+    return _buildSectionCard(
+      title: 'Details',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _titleController,
+            decoration: _inputDecoration(
+              labelText: 'Title (optional)',
+              hintText: 'Enter note title',
+            ),
+            textCapitalization: TextCapitalization.sentences,
           ),
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _contentController,
-          decoration: const InputDecoration(
-            labelText: 'Content',
-            hintText: 'Enter your note content',
-            border: OutlineInputBorder(),
-            alignLabelWithHint: true,
+          AppSpacing.vGapMd,
+          TextFormField(
+            controller: _contentController,
+            decoration: _inputDecoration(
+              labelText: 'Content',
+              hintText: 'Enter your note content',
+              alignLabelWithHint: true,
+            ),
+            maxLines: 10,
+            textCapitalization: TextCapitalization.sentences,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter note content';
+              }
+              return null;
+            },
           ),
-          maxLines: 10,
-          textCapitalization: TextCapitalization.sentences,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter note content';
-            }
-            return null;
-          },
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -206,73 +228,80 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
-          controller: _titleController,
-          decoration: const InputDecoration(
-            labelText: 'Title (optional)',
-            hintText: 'Enter note title',
-            border: OutlineInputBorder(),
-          ),
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        const SizedBox(height: 16),
-        
-        if (_selectedImage != null) ...[
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
+        _buildSectionCard(
+          title: 'Details',
+          child: TextFormField(
+            controller: _titleController,
+            decoration: _inputDecoration(
+              labelText: 'Title (optional)',
+              hintText: 'Enter note title',
             ),
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    _selectedImage!,
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.cover,
+            textCapitalization: TextCapitalization.sentences,
+          ),
+        ),
+        AppSpacing.vGapMd,
+        _buildSectionCard(
+          title: 'Source image',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_selectedImage != null) ...[
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        child: Image.file(
+                          _selectedImage!,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black54,
+                          ),
+                          onPressed: () => setState(() => _selectedImage = null),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                    ),
-                    onPressed: () => setState(() => _selectedImage = null),
-                  ),
-                ),
+                AppSpacing.vGapMd,
               ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        
-        ElevatedButton.icon(
-          onPressed: _pickImage,
-          icon: const Icon(Icons.photo_library),
-          label: Text(_selectedImage == null ? 'Select Image' : 'Change Image'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.all(16),
+              ElevatedButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.photo_library),
+                label: Text(_selectedImage == null ? 'Select Image' : 'Change Image'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              if (_selectedImage == null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Select an image to extract text using OCR',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
         ),
-        
-        if (_selectedImage == null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Select an image to extract text using OCR',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
       ],
     );
   }
@@ -281,130 +310,195 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
-          controller: _titleController,
-          decoration: const InputDecoration(
-            labelText: 'Title (optional)',
-            hintText: 'Will be auto-generated if empty',
-            border: OutlineInputBorder(),
-          ),
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        const SizedBox(height: 16),
-        if (_selectedPdf != null) ...[
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
+        _buildSectionCard(
+          title: 'Details',
+          child: TextFormField(
+            controller: _titleController,
+            decoration: _inputDecoration(
+              labelText: 'Title (optional)',
+              hintText: 'Will be auto-generated if empty',
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.picture_as_pdf, color: Colors.blue, size: 40),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            textCapitalization: TextCapitalization.sentences,
+          ),
+        ),
+        AppSpacing.vGapMd,
+        _buildSectionCard(
+          title: 'Source PDF',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_selectedPdf != null) ...[
+                Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: Row(
                     children: [
-                      const Text(
-                        'PDF Selected',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      Icon(
+                        Icons.picture_as_pdf,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 36,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _selectedPdf!.path.split('/').last,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      AppSpacing.hGapSm,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'PDF Selected',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            AppSpacing.vGapXs,
+                            Text(
+                              _selectedPdf!.path.split('/').last,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: AppColors.errorLight),
+                        onPressed: () => setState(() => _selectedPdf = null),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => setState(() => _selectedPdf = null),
+              ] else ...[
+                ElevatedButton.icon(
+                  onPressed: _pickPdf,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Select PDF File'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+                AppSpacing.vGapXs,
+                Text(
+                  'Select a PDF file to extract text and create a note',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
-            ),
+            ],
           ),
-        ] else ...[
-          ElevatedButton.icon(
-            onPressed: _pickPdf,
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Select PDF File'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Select a PDF file to extract text and create a note',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ],
     );
   }
 
   Widget _buildOptions() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Options',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SwitchListTile(
-              title: const Text('Generate Summary'),
-              subtitle: const Text('Automatically create summary'),
-              value: _generateSummary,
-              onChanged: (value) => setState(() => _generateSummary = value),
-              contentPadding: EdgeInsets.zero,
-            ),
-            SwitchListTile(
-              title: const Text('Generate Flashcards'),
-              subtitle: const Text('Extract key points as flashcards'),
-              value: _generateFlashcards,
-              onChanged: (value) => setState(() => _generateFlashcards = value),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
+    return _buildSectionCard(
+      title: 'Options',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SwitchListTile(
+            title: const Text('Generate Summary'),
+            subtitle: const Text('Automatically create summary'),
+            value: _generateSummary,
+            onChanged: (value) => setState(() => _generateSummary = value),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: const Text('Generate Flashcards'),
+            subtitle: const Text('Extract key points as flashcards'),
+            value: _generateFlashcards,
+            onChanged: (value) => setState(() => _generateFlashcards = value),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildErrorMessage(String message) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: AppSpacing.paddingSm,
       decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red[200]!),
+        color: AppColors.errorLight.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.errorLight.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Colors.red),
-          const SizedBox(width: 8),
+          Icon(Icons.error_outline, color: AppColors.errorLight),
+          AppSpacing.hGapSm,
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColors.errorLight),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: AppSpacing.paddingMd,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(title),
+          AppSpacing.vGapSm,
+          child,
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String labelText,
+    required String hintText,
+    bool alignLabelWithHint = false,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      alignLabelWithHint: alignLabelWithHint,
+      filled: true,
+      fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }
 

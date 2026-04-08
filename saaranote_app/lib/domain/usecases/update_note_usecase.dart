@@ -1,5 +1,5 @@
 import '../entities/note.dart';
-import '../entities/rich_text_content.dart';
+import '../entities/rich_text_content.dart' as domain;
 import '../repositories/note_repository.dart';
 
 /// Use case for updating an existing note
@@ -41,7 +41,7 @@ class UpdateNoteParams {
   final String? title;
   final String? content;
   final String? color;
-  final RichTextContent? richContent;
+  final domain.RichTextContent? richContent;
   final List<String>? drawingIds;
   final ContentType? contentType;
 

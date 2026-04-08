@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/note.dart';
+import '../../domain/entities/rich_text_content.dart' as domain;
 import '../../domain/usecases/get_all_notes_usecase.dart';
 import '../../domain/usecases/get_note_by_id_usecase.dart';
 import '../../domain/usecases/update_note_usecase.dart';
@@ -176,6 +177,9 @@ class NoteViewModel extends ChangeNotifier {
     String? title,
     String? content,
     String? color,
+    domain.RichTextContent? richContent,
+    List<String>? drawingIds,
+    ContentType? contentType,
   }) async {
     try {
       final params = UpdateNoteParams(
@@ -183,6 +187,9 @@ class NoteViewModel extends ChangeNotifier {
         title: title,
         content: content,
         color: color,
+        richContent: richContent,
+        drawingIds: drawingIds,
+        contentType: contentType,
       );
 
       await _updateNoteUseCase.execute(params);

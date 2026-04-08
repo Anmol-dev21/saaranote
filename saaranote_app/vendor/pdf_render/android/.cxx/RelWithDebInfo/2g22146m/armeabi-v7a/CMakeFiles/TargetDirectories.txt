@@ -1,3 +1,0 @@
-/workspaces/saaranote/saaranote_app/vendor/pdf_render/android/.cxx/RelWithDebInfo/2g22146m/armeabi-v7a/CMakeFiles/bbhelper.dir
-/workspaces/saaranote/saaranote_app/vendor/pdf_render/android/.cxx/RelWithDebInfo/2g22146m/armeabi-v7a/CMakeFiles/edit_cache.dir
-/workspaces/saaranote/saaranote_app/vendor/pdf_render/android/.cxx/RelWithDebInfo/2g22146m/armeabi-v7a/CMakeFiles/rebuild_cache.dir

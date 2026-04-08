@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../viewmodels/note_detail_viewmodel.dart';
 import '../../domain/entities/drawing.dart';
 import '../../domain/entities/rich_text_content.dart' as domain;
+import '../../core/design_system/app_components.dart';
+import '../../core/design_system/app_spacing.dart';
+import '../../core/design_system/app_typography.dart';
 
 /// Screen displaying note details with summaries and flashcards
 class NoteDetailScreen extends StatefulWidget {
@@ -21,7 +24,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Load note details when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NoteDetailViewModel>().loadNoteDetails(widget.noteId);
     });
@@ -29,6 +31,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Note Details'),
@@ -93,107 +97,87 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           }
 
           final note = viewModel.note!;
+          final contentStyle = AppTypography.body(
+            color: theme.colorScheme.onSurface,
+          );
 
           return RefreshIndicator(
             onRefresh: () => viewModel.refresh(),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Note Title
                   Text(
                     note.title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.h1(
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  
-                  // Metadata
-                  Row(
+                  AppSpacing.vGapSm,
+
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
                     children: [
-                      Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatDate(note.updatedAt),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                      _buildMetaPill(
+                        icon: Icons.access_time,
+                        label: _formatDate(note.updatedAt),
                       ),
-                      const SizedBox(width: 16),
-                      if (viewModel.hasSummaries) ...[
-                        Icon(Icons.description, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${viewModel.summaryCount} summary',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                      if (viewModel.hasSummaries)
+                        _buildMetaPill(
+                          icon: Icons.description,
+                          label: '${viewModel.summaryCount} summary',
                         ),
-                      ],
-                      const SizedBox(width: 16),
-                      if (viewModel.hasFlashcards) ...[
-                        Icon(Icons.psychology, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${viewModel.flashcardCount} cards',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                      if (viewModel.hasFlashcards)
+                        _buildMetaPill(
+                          icon: Icons.psychology,
+                          label: '${viewModel.flashcardCount} cards',
                         ),
-                      ],
                     ],
                   ),
-                  const Divider(height: 32),
-                  
-                  // Note Content
+                  AppSpacing.vGapLg,
+
                   _buildSection(
                     title: 'Content',
                     icon: Icons.article,
                     child: note.hasRichContent
                         ? SelectableText.rich(
-                            _buildRichTextSpan(note.richContent!, const TextStyle(
-                              fontSize: 16,
-                              height: 1.5,
-                            )),
+                            _buildRichTextSpan(note.richContent!, contentStyle),
                           )
                         : SelectableText(
                             note.content,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
+                            style: contentStyle,
                           ),
                   ),
 
-                  // Drawings Section
                   if (viewModel.hasDrawings) ...[
-                    const SizedBox(height: 24),
+                    AppSpacing.vGapLg,
                     _buildSection(
                       title: 'Drawings',
                       icon: Icons.draw,
                       child: Column(
                         children: viewModel.drawings.map((drawing) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outlineVariant,
+                          return Padding(
+                            padding: AppSpacing.verticalXs,
+                            child: Container(
+                              padding: AppSpacing.paddingSm,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerLow,
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                border: Border.all(
+                                  color: theme.dividerColor.withOpacity(0.4),
+                                ),
                               ),
-                            ),
-                            child: AspectRatio(
-                              aspectRatio: 4 / 3,
-                              child: CustomPaint(
-                                painter: _DrawingPreviewPainter(drawing: drawing),
-                                child: const SizedBox.expand(),
+                              child: AspectRatio(
+                                aspectRatio: 4 / 3,
+                                child: ClipRRect(
+                                  borderRadius: AppSpacing.borderRadiusSm,
+                                  child: CustomPaint(
+                                    painter: _DrawingPreviewPainter(drawing: drawing),
+                                    child: const SizedBox.expand(),
+                                  ),
+                                ),
                               ),
                             ),
                           );
@@ -201,32 +185,32 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       ),
                     ),
                   ],
-                  
-                  // Summary Section
+
                   if (viewModel.hasSummaries) ...[
-                    const SizedBox(height: 24),
+                    AppSpacing.vGapLg,
                     _buildSection(
                       title: 'Summary',
                       icon: Icons.description,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: viewModel.summaries.map((summary) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outlineVariant,
+                          return Padding(
+                            padding: AppSpacing.verticalXs,
+                            child: Container(
+                              padding: AppSpacing.paddingMd,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerLow,
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                border: Border.all(
+                                  color: theme.dividerColor.withOpacity(0.4),
+                                ),
                               ),
-                            ),
-                            child: SelectableText(
-                              summary.summaryText,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.5,
-                                color: Theme.of(context).colorScheme.onSurface,
+                              child: SelectableText(
+                                summary.summaryText,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  height: 1.6,
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
                             ),
                           );
@@ -234,66 +218,73 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       ),
                     ),
                   ],
-                  
-                  // Flashcards Section
+
                   if (viewModel.hasFlashcards) ...[
-                    const SizedBox(height: 24),
+                    AppSpacing.vGapLg,
                     _buildSection(
                       title: 'Flashcards',
                       icon: Icons.psychology,
                       child: Column(
                         children: viewModel.flashcards.map((flashcard) {
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ExpansionTile(
-                              title: Text(
-                                flashcard.question,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                          return Padding(
+                            padding: AppSpacing.verticalXs,
+                            child: Card(
+                              elevation: 0,
+                              color: theme.colorScheme.surfaceContainerLow,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                                side: BorderSide(
+                                  color: theme.dividerColor.withOpacity(0.4),
                                 ),
                               ),
-                              leading: CircleAvatar(
-                                backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
-                                child: Text(
-                                  '${flashcard.confidenceLevel}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                              child: ExpansionTile(
+                                tilePadding: AppSpacing.paddingMd,
+                                childrenPadding: AppSpacing.paddingMd,
+                                title: Text(
+                                  flashcard.question,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
+                                leading: CircleAvatar(
+                                  backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
+                                  child: Text(
+                                    '${flashcard.confidenceLevel}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                children: [
+                                  Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        'Answer:',
-                                        style: TextStyle(
+                                      Text(
+                                        'Answer',
+                                        style: theme.textTheme.labelMedium?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.grey,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      AppSpacing.vGapXs,
                                       SelectableText(
                                         flashcard.answer,
-                                        style: const TextStyle(fontSize: 14),
+                                        style: theme.textTheme.bodyMedium,
                                       ),
                                       if (flashcard.lastReviewedAt != null) ...[
-                                        const SizedBox(height: 8),
+                                        AppSpacing.vGapSm,
                                         Text(
                                           'Last reviewed: ${_formatDate(flashcard.lastReviewedAt!)}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
                                           ),
                                         ),
                                       ],
                                     ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         }).toList(),
@@ -311,13 +302,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   Future<void> _handleExportPdf(BuildContext context) async {
     final viewModel = context.read<NoteDetailViewModel>();
-    
-    // Call the viewmodel to export PDF
     await viewModel.exportNoteAsPdf();
-    
-    // Show success or error message
+
     if (!mounted) return;
-    
+
     if (viewModel.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -358,25 +346,74 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     required IconData icon,
     required Widget child,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 20, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: AppSpacing.cardContentPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 32,
+                width: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-            ),
-          ],
+              AppSpacing.hGapSm,
+              Text(
+                title,
+                style: AppTypography.h3(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          AppSpacing.vGapSm,
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaPill({
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.4),
         ),
-        const SizedBox(height: 12),
-        child,
-      ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          AppSpacing.hGapXs,
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -401,98 +438,76 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     return Colors.red;
   }
 
-  TextSpan _buildRichTextSpan(domain.RichTextContent content, TextStyle baseStyle) {
-    final text = content.plainText;
-    if (text.isEmpty) return TextSpan(text: '', style: baseStyle);
-
-    final spans = content.spans.toList()
-      ..sort((a, b) => a.start.compareTo(b.start));
-
-    if (spans.isEmpty) {
-      return TextSpan(text: text, style: baseStyle);
+  TextSpan _buildRichTextSpan(
+    domain.RichTextContent content,
+    TextStyle baseStyle,
+  ) {
+    if (content.spans.isEmpty) {
+      return TextSpan(text: content.plainText, style: baseStyle);
     }
 
-    final children = <TextSpan>[];
-    int index = 0;
+    final spans = <TextSpan>[];
+    int current = 0;
 
-    for (final span in spans) {
-      final start = span.start.clamp(0, text.length);
-      final end = span.end.clamp(0, text.length);
-
-      if (start > index) {
-        children.add(TextSpan(
-          text: text.substring(index, start),
+    for (final span in content.spans) {
+      if (span.start > current) {
+        spans.add(TextSpan(
+          text: content.plainText.substring(current, span.start),
           style: baseStyle,
         ));
       }
 
-      if (end > start) {
-        children.add(TextSpan(
-          text: text.substring(start, end),
-          style: _applySpanStyle(baseStyle, span.style),
-        ));
-      }
-
-      index = end;
+      final style = _buildTextStyle(span.style, baseStyle);
+      spans.add(TextSpan(
+        text: content.plainText.substring(span.start, span.end),
+        style: style,
+      ));
+      current = span.end;
     }
 
-    if (index < text.length) {
-      children.add(TextSpan(
-        text: text.substring(index),
+    if (current < content.plainText.length) {
+      spans.add(TextSpan(
+        text: content.plainText.substring(current),
         style: baseStyle,
       ));
     }
 
-    return TextSpan(style: baseStyle, children: children);
+    return TextSpan(style: baseStyle, children: spans);
   }
 
-  TextStyle _applySpanStyle(TextStyle baseStyle, domain.TextStyle spanStyle) {
+  TextStyle _buildTextStyle(domain.TextStyle style, TextStyle baseStyle) {
     return baseStyle.copyWith(
-      fontWeight: spanStyle.bold ? FontWeight.bold : null,
-      fontStyle: spanStyle.italic ? FontStyle.italic : null,
-      decoration: spanStyle.underline ? TextDecoration.underline : null,
-      fontSize: spanStyle.fontSize,
-      color: _parseColor(spanStyle.textColor) ?? baseStyle.color,
-      backgroundColor: _parseColor(spanStyle.highlightColor),
+      fontWeight: style.bold ? FontWeight.w600 : baseStyle.fontWeight,
+      fontStyle: style.italic ? FontStyle.italic : baseStyle.fontStyle,
+      decoration: style.underline ? TextDecoration.underline : baseStyle.decoration,
+      fontSize: style.fontSize ?? baseStyle.fontSize,
+      color: style.textColor != null ? _parseHexColor(style.textColor!) : baseStyle.color,
+      backgroundColor: style.highlightColor != null
+          ? _parseHexColor(style.highlightColor!)
+          : baseStyle.backgroundColor,
     );
   }
 
-  Color? _parseColor(String? hexColor) {
-    if (hexColor == null || hexColor.isEmpty) return null;
-    final cleaned = hexColor.replaceFirst('#', '');
-    final value = int.tryParse(cleaned, radix: 16);
-    if (value == null) return null;
-    return Color(0xFF000000 | value);
+  Color _parseHexColor(String value) {
+    final hex = value.replaceFirst('#', '');
+    final colorValue = int.parse(hex, radix: 16);
+    return Color(0xFF000000 | colorValue);
   }
 }
 
 class _DrawingPreviewPainter extends CustomPainter {
   final Drawing drawing;
 
-  _DrawingPreviewPainter({required this.drawing});
+  _DrawingPreviewPainter({
+    required this.drawing,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (drawing.strokes.isEmpty) return;
-
-    final bounds = drawing.bounds;
-    if (bounds == null || bounds.width == 0 || bounds.height == 0) return;
-
-    final scaleX = size.width / bounds.width;
-    final scaleY = size.height / bounds.height;
-    final scale = scaleX < scaleY ? scaleX : scaleY;
-
-    final offsetX = (size.width - bounds.width * scale) / 2 - bounds.minX * scale;
-    final offsetY = (size.height - bounds.height * scale) / 2 - bounds.minY * scale;
-
-    canvas.save();
-    canvas.translate(offsetX, offsetY);
-    canvas.scale(scale, scale);
-
+    canvas.saveLayer(Offset.zero & size, Paint());
     for (final stroke in drawing.strokes) {
       _drawStroke(canvas, stroke);
     }
-
     canvas.restore();
   }
 
@@ -506,7 +521,7 @@ class _DrawingPreviewPainter extends CustomPainter {
       ..strokeWidth = stroke.style.width;
 
     final colorHex = stroke.style.color.replaceFirst('#', '');
-    final colorValue = int.tryParse(colorHex, radix: 16) ?? 0;
+    final colorValue = int.parse(colorHex, radix: 16);
     final baseColor = Color(0xFF000000 | colorValue);
 
     paint.color = baseColor.withOpacity(stroke.style.opacity);
@@ -525,7 +540,6 @@ class _DrawingPreviewPainter extends CustomPainter {
     }
 
     final path = Path();
-
     if (stroke.points.length == 1) {
       final point = stroke.points.first;
       canvas.drawCircle(
@@ -533,27 +547,34 @@ class _DrawingPreviewPainter extends CustomPainter {
         paint.strokeWidth / 2,
         paint..style = PaintingStyle.fill,
       );
-      return;
+    } else {
+      path.moveTo(stroke.points.first.x, stroke.points.first.y);
+
+      for (int i = 1; i < stroke.points.length - 1; i++) {
+        final current = stroke.points[i];
+        final next = stroke.points[i + 1];
+
+        final controlX = (current.x + next.x) / 2;
+        final controlY = (current.y + next.y) / 2;
+
+        path.quadraticBezierTo(
+          current.x,
+          current.y,
+          controlX,
+          controlY,
+        );
+      }
+
+      final lastPoint = stroke.points.last;
+      path.lineTo(lastPoint.x, lastPoint.y);
+
+      canvas.drawPath(path, paint);
     }
-
-    path.moveTo(stroke.points.first.x, stroke.points.first.y);
-
-    for (int i = 1; i < stroke.points.length - 1; i++) {
-      final current = stroke.points[i];
-      final next = stroke.points[i + 1];
-      final controlX = (current.x + next.x) / 2;
-      final controlY = (current.y + next.y) / 2;
-      path.quadraticBezierTo(current.x, current.y, controlX, controlY);
-    }
-
-    final lastPoint = stroke.points.last;
-    path.lineTo(lastPoint.x, lastPoint.y);
-
-    canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant _DrawingPreviewPainter oldDelegate) {
-    return oldDelegate.drawing != drawing;
+    return oldDelegate.drawing.id != drawing.id ||
+        oldDelegate.drawing.totalPoints != drawing.totalPoints;
   }
 }

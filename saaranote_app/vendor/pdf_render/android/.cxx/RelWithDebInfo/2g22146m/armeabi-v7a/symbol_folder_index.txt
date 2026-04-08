@@ -1,1 +1,0 @@
-/workspaces/saaranote/saaranote_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/2g22146m/obj/armeabi-v7a

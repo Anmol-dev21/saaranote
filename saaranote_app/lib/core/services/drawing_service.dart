@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import '../../domain/entities/drawing.dart';
 
 /// Service for handling drawing operations
@@ -134,7 +135,7 @@ class DrawingService {
   double _euclideanDistance(StrokePoint a, StrokePoint b) {
     final dx = b.x - a.x;
     final dy = b.y - a.y;
-    return (dx * dx + dy * dy); // Return squared distance (no sqrt for performance)
+    return math.sqrt(dx * dx + dy * dy);
   }
 
   // Serialize stroke to map

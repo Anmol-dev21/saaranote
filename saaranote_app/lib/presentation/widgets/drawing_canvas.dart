@@ -15,19 +15,34 @@ class DrawingCanvas extends StatefulWidget {
 class _DrawingCanvasState extends State<DrawingCanvas> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<NoteEditorViewModel>(
-      builder: (context, viewModel, child) {
+    return Selector<NoteEditorViewModel, int>(
+      selector: (context, viewModel) => viewModel.drawingRevision,
+      builder: (context, revision, child) {
+        final viewModel = context.read<NoteEditorViewModel>();
         return Container(
           color: Colors.white,
-          child: GestureDetector(
-            onPanStart: (details) => _handlePanStart(context, details),
-            onPanUpdate: (details) => _handlePanUpdate(context, details),
-            onPanEnd: (details) => _handlePanEnd(context, details),
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _DrawingPainter(
-                strokes: viewModel.currentStrokes,
-                drawings: viewModel.drawings,
+          child: Listener(
+            onPointerUp: (_) => _handlePointerUp(context),
+            onPointerCancel: (_) => _handlePointerUp(context),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (details) => _handlePanStart(context, details),
+              onPanUpdate: (details) => _handlePanUpdate(context, details),
+              onPanEnd: (details) => _handlePanEnd(context, details),
+              onPanCancel: () => _handlePanCancel(context),
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _DrawingPainter(
+                    strokes: viewModel.currentStrokes,
+                    drawings: viewModel.drawings,
+                    activeStroke: viewModel.activeStroke,
+                    revision: revision,
+                    hasEraser: viewModel.hasEraserStrokes,
+                  ),
+                  isComplex: true,
+                  willChange: true,
+                ),
               ),
             ),
           ),
@@ -53,6 +68,16 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     final viewModel = context.read<NoteEditorViewModel>();
     viewModel.endStroke();
   }
+
+  void _handlePanCancel(BuildContext context) {
+    final viewModel = context.read<NoteEditorViewModel>();
+    viewModel.endStroke();
+  }
+
+  void _handlePointerUp(BuildContext context) {
+    final viewModel = context.read<NoteEditorViewModel>();
+    viewModel.endStroke();
+  }
 }
 
 /// Custom painter for drawing strokes
@@ -60,14 +85,23 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 class _DrawingPainter extends CustomPainter {
   final List<DrawingStroke> strokes;
   final List<Drawing> drawings;
+  final DrawingStroke? activeStroke;
+  final int revision;
+  final bool hasEraser;
 
   _DrawingPainter({
     required this.strokes,
     required this.drawings,
+    required this.activeStroke,
+    required this.revision,
+    required this.hasEraser,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (hasEraser) {
+      canvas.saveLayer(Offset.zero & size, Paint());
+    }
     // Draw completed drawings first
     for (final drawing in drawings) {
       for (final stroke in drawing.strokes) {
@@ -78,6 +112,13 @@ class _DrawingPainter extends CustomPainter {
     // Draw current strokes on top
     for (final stroke in strokes) {
       _drawStroke(canvas, stroke);
+    }
+
+    if (activeStroke != null) {
+      _drawStroke(canvas, activeStroke!);
+    }
+    if (hasEraser) {
+      canvas.restore();
     }
   }
 
@@ -157,8 +198,6 @@ class _DrawingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DrawingPainter oldDelegate) {
-    // Repaint if strokes or drawings changed
-    return strokes.length != oldDelegate.strokes.length ||
-        drawings.length != oldDelegate.drawings.length;
+    return revision != oldDelegate.revision || hasEraser != oldDelegate.hasEraser;
   }
 }
