@@ -4,6 +4,8 @@ import '../../domain/entities/retrieval_result.dart';
 import '../utils/keyword_extractor.dart';
 import '../utils/sentence_ranker.dart';
 import '../utils/text_processor.dart';
+import '../utils/summary_formatter.dart';
+import '../ai_engine.dart';
 import 'generation_service.dart';
 import 'retrieval_service.dart';
 
@@ -11,12 +13,15 @@ import 'retrieval_service.dart';
 class OfflineQaService {
   final RetrievalService _retrievalService;
   final QueryProcessor _queryProcessor;
+  final AIEngine? _aiEngine;
 
   OfflineQaService({
     required RetrievalService retrievalService,
     required QueryProcessor queryProcessor,
+    AIEngine? aiEngine,
   })  : _retrievalService = retrievalService,
-        _queryProcessor = queryProcessor;
+        _queryProcessor = queryProcessor,
+        _aiEngine = aiEngine;
 
   Future<GeneratedResponse> answer({
     required String query,
@@ -63,7 +68,7 @@ class OfflineQaService {
           content = _generateList(context, maxChars: maxChars);
           break;
         case QueryIntent.summarization:
-          content = _generateSummary(context, maxChars: maxChars);
+          content = await _generateSummary(context, maxChars: maxChars);
           break;
         case QueryIntent.comparison:
           content = _generateComparison(context, maxChars: maxChars);
@@ -252,10 +257,17 @@ class OfflineQaService {
     return items.map((item) => '- $item').join('\n');
   }
 
-  String _generateSummary(List<RetrievalResult> context, {required int maxChars}) {
+  Future<String> _generateSummary(List<RetrievalResult> context, {required int maxChars}) async {
     final combined = context
         .map((r) => _truncate(r.chunk.content, maxChars))
         .join(' ');
+
+    if (_aiEngine != null) {
+      final structured = await _buildStructuredSummary(combined, maxChars: maxChars);
+      if (structured.trim().isNotEmpty) {
+        return structured;
+      }
+    }
 
     final keywords = KeywordExtractor.extractKeywords(combined, maxKeywords: 8);
     final sentences = SentenceRanker.rankSentences(
@@ -265,6 +277,18 @@ class OfflineQaService {
     );
 
     return sentences.isEmpty ? 'Unable to generate summary.' : sentences.join(' ');
+  }
+
+  Future<String> _buildStructuredSummary(String text, {required int maxChars}) async {
+    if (_aiEngine == null) return text;
+    final truncated = _truncate(text, maxChars);
+    final result = await _aiEngine!.generateSummary(text: truncated);
+    return SummaryFormatter.formatStructuredSummary(
+      result.structured,
+      includeSections: true,
+      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      simplify: true,
+    );
   }
 
   String _generateComparison(List<RetrievalResult> context, {required int maxChars}) {

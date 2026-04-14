@@ -9,6 +9,7 @@ import '../../core/services/ocr_service.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
+import '../../core/utils/summary_formatter.dart';
 import '../../core/ai_engine.dart';
 
 /// Use case for creating a note from an image using OCR, with automatic
@@ -133,6 +134,13 @@ class CreateNoteFromImageUseCase {
     }
 
     final result = await _aiEngine!.generateSummary(text: content);
+    final structuredText = SummaryFormatter.formatStructuredSummary(
+      result.structured,
+      includeSections: true,
+      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+    );
+    if (structuredText.isNotEmpty) return structuredText;
+
     return result.detailedSummary.isNotEmpty
         ? result.detailedSummary
         : Summarizer.generateDetailedSummary(content);

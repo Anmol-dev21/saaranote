@@ -6,15 +6,30 @@ class TextProcessor {
 
     String cleaned = rawText;
 
+    // Normalize line endings
+    cleaned = cleaned.replaceAll('\r\n', '\n');
+    cleaned = cleaned.replaceAll('\r', '\n');
+
     // Remove common extraction artifacts (PDF/OCR)
     cleaned = cleaned.replaceAll(RegExp(r'\$1'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r'\$\d+'), ' ');
     cleaned = cleaned.replaceAll(RegExp(r'\f'), ' ');
 
-    // Remove excessive whitespace
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
+    // De-hyphenate line breaks (e.g., exam-\nple -> example)
+    cleaned = cleaned.replaceAll(RegExp(r'(\w)-\n(\w)'), r'$1$2');
 
-    // Normalize line breaks
+    // Merge broken lines when a sentence continues on the next line
+    cleaned = cleaned.replaceAll(RegExp(r'([^\n.!?])\n(?=[a-z])'), r'$1 ');
+
+    // Normalize line breaks while preserving paragraph boundaries
     cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    cleaned = cleaned.replaceAll('\n\n', ' __PARA_BREAK__ ');
+    cleaned = cleaned.replaceAll('\n', ' ');
+    cleaned = cleaned.replaceAll('__PARA_BREAK__', '\n\n');
+
+    // Remove excessive whitespace (preserve paragraph breaks)
+    cleaned = cleaned.replaceAll(RegExp(r'[ \t]+'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r' *\n\n *'), '\n\n');
 
     // Remove leading/trailing whitespace
     cleaned = cleaned.trim();
@@ -31,7 +46,8 @@ class TextProcessor {
     cleaned = cleaned.replaceAll(RegExp(r"[''']"), "'");
 
     // Remove multiple spaces again after transformations
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r'[ \t]+'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r' *\n\n *'), '\n\n');
 
     return cleaned.trim();
   }

@@ -1,10 +1,10 @@
 # SaaraNote App
 
-A production-ready Flutter application for intelligent note-taking with AI-powered features including OCR, PDF import/export, automatic summarization, and flashcard generation.
+A production-ready Flutter application for intelligent note-taking with OCR, PDF import/export, automatic summarization, flashcard generation, rich text and drawing notes, and offline Q&A.
 
 ## Overview
 
-SaaraNote is designed as an offline-first study companion that helps students and professionals capture, organize, and review information efficiently. All AI processing happens on-device using Google ML Kit and custom algorithms, ensuring privacy and functionality without internet connectivity.
+SaaraNote is designed as an offline-first study companion that helps students and professionals capture, organize, and review information efficiently. AI processing happens on-device using Google ML Kit and custom services, ensuring privacy and functionality without internet connectivity. The app now includes a full Material 3 design system, a rich text and drawing editor, and an offline Q&A pipeline over local notes.
 
 ## Features
 
@@ -12,17 +12,26 @@ SaaraNote is designed as an offline-first study companion that helps students an
 - **Text Notes** - Type or paste content directly
 - **Image OCR** - Extract text from photos using Google ML Kit Text Recognition
 - **PDF Import** - Extract text from PDF documents for note creation
+- **Rich Text Editor** - Bold, italic, underline, colors, and font sizes
+- **Drawing Canvas** - Pen, highlighter, eraser, and hybrid text + drawing notes
 - Auto-generates summaries and flashcards during creation
 
 ### 🔍 Search & Organization
 - **Full-Text Search** - Search across note titles and content with instant results
 - **Smart Filtering** - Sort by Recent or Oldest creation date
 - **Quick Navigation** - Tap any note to view details with summaries and flashcards
+- **File Organization System** - Backend for auto-organizing PDFs/images by subject
 
 ### 🧠 Intelligent Features
 - **Extractive Summarization** - Automatically generates concise summaries from note content
 - **Flashcard Generation** - AI-powered question-answer pairs for effective revision
 - **Key Point Extraction** - Identifies and extracts important concepts
+- **Offline Q&A** - Ask questions about your notes using local retrieval
+
+### 💬 AI Chat & Citations
+- **Chat Sessions** - Start new conversations and keep history locally
+- **Source Citations** - Answers include excerpts linked to indexed notes
+- **Offline by Design** - No external API calls or network dependency
 
 ### 📤 Export & Sharing
 - **PDF Export** - Generate formatted PDF documents containing:
@@ -37,6 +46,15 @@ SaaraNote is designed as an offline-first study companion that helps students an
 - **Navigation Controls** - Previous/Next buttons to move through cards
 - **Confidence Tracking** - Track your confidence level for spaced repetition
 
+### Appearance & Accessibility
+- **Material 3 Design System** - Consistent colors, typography, and spacing
+- **Theme Settings** - Light, dark, or system theme modes
+- **Text Scaling** - Adjustable text scale for readability
+
+### Settings & Preferences
+- **AI Toggles** - Enable/disable offline chat, auto summaries, and flashcards
+- **Local Storage Controls** - Manage cached files and exports
+
 ## Technology Stack
 
 ### Framework & Language
@@ -50,6 +68,8 @@ SaaraNote is designed as an offline-first study companion that helps students an
 ### Local Storage
 - **SQLite** (sqflite ^2.4.1) - Relational database for structured data
 - **path_provider** - Cross-platform path management
+- **shared_preferences** - Local settings storage
+- **SQLite FTS** - Full-text search index for offline Q&A retrieval
 - **Offline-First Design** - All data stored locally, no cloud dependency
 
 ### AI & Processing
@@ -58,14 +78,18 @@ SaaraNote is designed as an offline-first study companion that helps students an
   - `TextProcessor` - Content cleaning and normalization
   - `Summarizer` - Extractive summarization using sentence scoring
   - `KeyPointExtractor` - Question-answer pair generation
+  - `RetrievalService` - Local retrieval over indexed notes
+  - `OfflineQaService` - On-device question answering pipeline
 
 ### PDF Support
-- **pdf_text** (^0.5.0) - Extract text from PDF files
+- **syncfusion_flutter_pdf** (^28.2.12) - Extract text from PDF files
+- **pdf_render** (local) - Render PDF pages for OCR fallback
 - **pdf** (^3.11.1) - Generate formatted PDF documents
 
 ### Other Dependencies
 - **image_picker** (^1.1.2) - Camera and gallery access
 - **file_picker** (^8.1.4) - File system navigation
+- **google_fonts** (^8.0.2) - App typography (Inter)
 
 ## Architecture
 
@@ -74,19 +98,22 @@ SaaraNote is designed as an offline-first study companion that helps students an
 ```
 lib/
 ├── core/
-│   ├── services/          # External services (OCR, PDF)
-│   └── utils/            # Helper utilities (TextProcessor, Summarizer)
+│   ├── ai_engine.dart     # Offline summarization engine
+│   ├── design_system/     # Theme, typography, spacing, components
+│   ├── services/          # OCR, PDF, rich text, drawing, retrieval, QA
+│   └── utils/             # Text processing utilities
 ├── data/
-│   ├── datasources/      # SQLite database operations
-│   ├── models/           # Data models
-│   └── repositories/     # Repository implementations
+│   ├── datasources/       # SQLite database operations
+│   ├── models/            # Data models
+│   └── repositories/      # Repository implementations
 ├── domain/
-│   ├── entities/         # Business entities (Note, Flashcard, Summary)
-│   ├── repositories/     # Repository contracts
-│   └── usecases/         # Business logic use cases
+│   ├── entities/          # Notes, chat, drawings, file metadata
+│   ├── repositories/      # Repository contracts
+│   └── usecases/          # Business logic use cases
 └── presentation/
-    ├── screens/          # UI screens
-    └── viewmodels/       # State management (MVVM)
+  ├── screens/           # UI screens
+  ├── viewmodels/        # State management (MVVM)
+  └── widgets/           # Reusable UI widgets
 ```
 
 ### Key Design Patterns
@@ -111,7 +138,13 @@ lib/
 - Examples: `CreateNoteFromImageUseCase`, `SearchNotesUseCase`
 - Keeps ViewModels thin and testable
 
+**5. Design System**
+- Material 3 themes, typography, spacing, and reusable components
+- Shared tokens for consistent UI across screens
+
 ## Database Schema
+
+**Database Version:** 4
 
 ### Notes Table
 ```sql
@@ -119,10 +152,25 @@ CREATE TABLE notes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  is_archived INTEGER DEFAULT 0,
   color TEXT,
-  is_archived INTEGER DEFAULT 0
+  rich_content TEXT,
+  drawing_ids TEXT,
+  content_type TEXT DEFAULT 'plain'
+)
+```
+
+### Drawings Table
+```sql
+CREATE TABLE drawings (
+  id TEXT PRIMARY KEY,
+  note_id INTEGER NOT NULL,
+  drawing_data TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
 )
 ```
 
@@ -132,7 +180,7 @@ CREATE TABLE summaries (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   note_id INTEGER NOT NULL,
   summary_text TEXT NOT NULL,
-  created_at TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
   FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
 )
 ```
@@ -145,9 +193,95 @@ CREATE TABLE flashcards (
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
   confidence_level INTEGER DEFAULT 0,
-  created_at TEXT NOT NULL,
-  last_reviewed_at TEXT,
+  created_at INTEGER NOT NULL,
+  last_reviewed_at INTEGER,
   FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+)
+```
+
+### File Organization Tables
+```sql
+CREATE TABLE file_metadata (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_path TEXT NOT NULL UNIQUE,
+  file_name TEXT NOT NULL,
+  file_type INTEGER NOT NULL,
+  subject TEXT,
+  created_at INTEGER NOT NULL,
+  last_modified INTEGER,
+  file_size INTEGER NOT NULL,
+  related_note_id TEXT,
+  organization_status INTEGER DEFAULT 0,
+  custom_folder TEXT,
+  tags TEXT
+)
+```
+
+```sql
+CREATE TABLE organization_rules (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  subject_pattern TEXT,
+  file_type INTEGER,
+  target_folder TEXT NOT NULL,
+  priority INTEGER DEFAULT 0,
+  is_enabled INTEGER DEFAULT 1
+)
+```
+
+### Offline Q&A Tables
+```sql
+CREATE TABLE document_chunks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_metadata_id INTEGER NOT NULL,
+  chunk_index INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  token_count INTEGER,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (file_metadata_id) REFERENCES file_metadata(id) ON DELETE CASCADE
+)
+```
+
+```sql
+CREATE VIRTUAL TABLE document_chunks_fts USING fts5(
+  content,
+  content='document_chunks',
+  content_rowid='id'
+)
+```
+
+```sql
+CREATE TABLE chat_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  tags TEXT
+)
+```
+
+```sql
+CREATE TABLE chat_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  timestamp INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+)
+```
+
+```sql
+CREATE TABLE message_sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id INTEGER NOT NULL,
+  file_metadata_id INTEGER NOT NULL,
+  chunk_id INTEGER NOT NULL,
+  relevance_score REAL NOT NULL,
+  FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+  FOREIGN KEY (file_metadata_id) REFERENCES file_metadata(id) ON DELETE CASCADE,
+  FOREIGN KEY (chunk_id) REFERENCES document_chunks(id) ON DELETE CASCADE
 )
 ```
 
@@ -224,11 +358,16 @@ dependencies:
   provider: ^6.1.2              # State management
   sqflite: ^2.4.1               # Local database
   path_provider: ^2.1.5         # File paths
+  path: ^1.9.0                  # Path utilities
+  shared_preferences: ^2.3.2    # Local settings
   google_mlkit_text_recognition: ^0.13.1  # OCR
-  pdf_text: ^0.5.0              # PDF reading
+  syncfusion_flutter_pdf: ^28.2.12  # PDF text extraction
+  pdf_render:                   # PDF rendering (local path)
+    path: vendor/pdf_render
   pdf: ^3.11.1                  # PDF generation
   file_picker: ^8.1.4           # File selection
   image_picker: ^1.1.2          # Camera/gallery
+  google_fonts: ^8.0.2          # Typography
 ```
 
 ### App Permissions
@@ -295,6 +434,38 @@ User taps export
   → Generates formatted PDF with pw.Document()
   → Saves to temporary directory
   → Returns File for sharing
+```
+
+### 6. Rich Text and Drawing Editor
+
+```dart
+User opens editor
+  → NoteEditorViewModel manages mode and formatting
+  → RichTextService serializes spans to JSON
+  → DrawingService serializes stroke data
+  → NoteRepository.save() with rich_content and drawing_ids
+  → Drawings saved in drawings table
+```
+
+### 7. Offline Q&A
+
+```dart
+User asks a question
+  → ChatViewModel.sendMessage()
+  → AskQuestionUseCase.execute()
+  → RetrievalService uses SQLite FTS keyword search
+  → OfflineQaService/GenerationService produce response
+  → ChatRepository stores messages and sources
+```
+
+### 8. File Organization
+
+```dart
+User imports files
+  → FileOrganizationService.organizeFile()
+  → Organization rules applied
+  → FileOrganizationRepository saves metadata
+  → Files indexed in file_metadata table
 ```
 
 ## Testing
@@ -376,6 +547,13 @@ flutter build apk
 - **No Analytics**: No tracking or telemetry
 - **Local Storage**: All data in SQLite on device
 - **On-Device AI**: OCR and summarization happen locally
+
+## Documentation
+
+- Design system guide: [saaranote_app/DESIGN_SYSTEM.md](saaranote_app/DESIGN_SYSTEM.md)
+- Advanced note foundation: [saaranote_app/ADVANCED_NOTE_FOUNDATION.md](saaranote_app/ADVANCED_NOTE_FOUNDATION.md)
+- Rich text and drawing UI: [saaranote_app/RICH_TEXT_DRAWING_UI.md](saaranote_app/RICH_TEXT_DRAWING_UI.md)
+- File organization system: [saaranote_app/FILE_ORGANIZATION_SYSTEM.md](saaranote_app/FILE_ORGANIZATION_SYSTEM.md)
 
 ## Contributing
 

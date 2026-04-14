@@ -81,10 +81,11 @@ class MyApp extends StatelessWidget {
     final aiEngine = AIEngine();
     final retrievalService = RetrievalService(indexRepository);
     final queryProcessor = QueryProcessor();
-    final generationService = GenerationService();
+    final generationService = GenerationService(aiEngine: aiEngine);
     final offlineQaService = OfflineQaService(
       retrievalService: retrievalService,
       queryProcessor: queryProcessor,
+      aiEngine: aiEngine,
     );
     final settingsService = SettingsService();
 

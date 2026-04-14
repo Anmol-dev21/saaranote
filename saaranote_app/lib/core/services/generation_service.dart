@@ -1,9 +1,15 @@
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/query_intent.dart';
 import '../../domain/entities/retrieval_result.dart';
+import '../ai_engine.dart';
+import '../utils/summary_formatter.dart';
 
 /// Service for generating responses from retrieved context
 class GenerationService {
+  final AIEngine? _aiEngine;
+
+  GenerationService({AIEngine? aiEngine}) : _aiEngine = aiEngine;
+
   Future<GeneratedResponse> generate({
     required String query,
     required List<RetrievalResult> context,
@@ -29,7 +35,7 @@ class GenerationService {
         content = _generateList(context);
         break;
       case QueryIntent.summarization:
-        content = _generateSummary(context);
+        content = await _generateSummary(context);
         break;
       case QueryIntent.comparison:
         content = _generateComparison(context);
@@ -116,13 +122,30 @@ class GenerationService {
     return items.map((item) => '• $item').join('\n');
   }
 
-  String _generateSummary(List<RetrievalResult> context) {
+  Future<String> _generateSummary(List<RetrievalResult> context) async {
+    final combined = context.map((r) => r.chunk.content).join(' ');
+    if (_aiEngine != null) {
+      final structured = await _buildStructuredSummary(combined);
+      if (structured.trim().isNotEmpty) return structured;
+    }
+
     final summary = context.take(3).map((r) {
       final sentences = _splitIntoSentences(r.chunk.content);
       return sentences.isNotEmpty ? sentences.first : '';
     }).where((s) => s.isNotEmpty).join(' ');
 
     return summary.isNotEmpty ? summary : 'Unable to generate summary.';
+  }
+
+  Future<String> _buildStructuredSummary(String text) async {
+    if (_aiEngine == null) return '';
+    final result = await _aiEngine!.generateSummary(text: text);
+    return SummaryFormatter.formatStructuredSummary(
+      result.structured,
+      includeSections: true,
+      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      simplify: true,
+    );
   }
 
   String _generateComparison(List<RetrievalResult> context) {
