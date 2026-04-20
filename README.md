@@ -5,7 +5,8 @@ SaaraNote is an intelligent note-taking and study companion app built with Flutt
 ## Features
 
 - **Smart Note Creation** - Create notes from typed text, camera images (OCR), or imported PDF files
-- **Intelligent Summarization** - Automatic extractive summarization of note content
+- **Hybrid Summarization** - Rule-based summaries with optional local LLM enhancement
+- **AI Enhancement Toggle** - Enable or disable AI rewriting per note
 - **Flashcard Generation** - AI-powered flashcard creation for effective revision
 - **Advanced Search** - Full-text search across all notes with instant results
 - **Flexible Filtering** - Sort notes by date (Recent/Oldest) for quick organization
@@ -21,6 +22,7 @@ SaaraNote is an intelligent note-taking and study companion app built with Flutt
 **Local Database:** SQLite (sqflite)  
 **OCR Engine:** Google ML Kit Text Recognition  
 **PDF Processing:** pdf_text (extraction), pdf (generation)  
+**Local LLM (Optional):** Ollama with Phi-3  
 
 ## Architecture
 
@@ -85,6 +87,20 @@ flutter pub get
 # Run the app
 flutter run
 ```
+
+### Local LLM Setup (Optional)
+
+If you want AI-enhanced summaries, run a local Ollama model:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Run Phi-3 locally
+ollama run phi3
+```
+
+The app connects to `http://localhost:11434` for local generation.
 
 ### Build Release APK
 

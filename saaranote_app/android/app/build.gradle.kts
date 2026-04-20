@@ -7,6 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.saaranote_app"
+    buildToolsVersion = "34.0.0"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

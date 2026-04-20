@@ -4,7 +4,7 @@ A production-ready Flutter application for intelligent note-taking with AI-power
 
 ## Overview
 
-SaaraNote is designed as an offline-first study companion that helps students and professionals capture, organize, and review information efficiently. All AI processing happens on-device using Google ML Kit and custom algorithms, ensuring privacy and functionality without internet connectivity.
+SaaraNote is designed as an offline-first study companion that helps students and professionals capture, organize, and review information efficiently. AI processing happens on-device using Google ML Kit and custom algorithms, with an optional local LLM layer for summary rewriting.
 
 ## Features
 
@@ -20,9 +20,10 @@ SaaraNote is designed as an offline-first study companion that helps students an
 - **Quick Navigation** - Tap any note to view details with summaries and flashcards
 
 ### 🧠 Intelligent Features
-- **Extractive Summarization** - Automatically generates concise summaries from note content
+- **Hybrid Summarization** - Rule-based summaries with optional local LLM enhancement
 - **Flashcard Generation** - AI-powered question-answer pairs for effective revision
 - **Key Point Extraction** - Identifies and extracts important concepts
+- **AI Enhancement Toggle** - Enable or disable AI rewriting per note
 
 ### 📤 Export & Sharing
 - **PDF Export** - Generate formatted PDF documents containing:
@@ -58,6 +59,7 @@ SaaraNote is designed as an offline-first study companion that helps students an
   - `TextProcessor` - Content cleaning and normalization
   - `Summarizer` - Extractive summarization using sentence scoring
   - `KeyPointExtractor` - Question-answer pair generation
+- **Local LLM (Optional)** - Ollama (Phi-3) for summary rewriting
 
 ### PDF Support
 - **pdf_text** (^0.5.0) - Extract text from PDF files
@@ -178,6 +180,34 @@ flutter pub get
 # Verify installation
 flutter doctor
 ```
+
+### Optional: Local LLM Setup (AI Enhancement)
+
+To enable AI-enhanced summaries, run a local Ollama model:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Run Phi-3 locally
+ollama run phi3
+```
+
+The app connects to `http://localhost:11434`.
+
+### Summary Output Format
+
+When AI enhancement is enabled, summaries are formatted as:
+
+```
+Title: <short title>
+Summary: <2-4 sentences>
+Key Points:
+- <point 1>
+- <point 2>
+```
+
+The UI displays an "AI Enhanced" label for valid AI output, and falls back to a basic summary with a small banner if AI is unavailable.
 
 ### Running the App
 
