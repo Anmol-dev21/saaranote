@@ -149,7 +149,7 @@ void main() {
           createTestFlashcard(id: 2, noteId: 1, question: 'Q2', answer: 'A2'),
         ];
 
-        int currentIndex = 1;
+        int currentIndex = flashcards.length - 1;
         final canGoPrevious = currentIndex > 0;
 
         expect(canGoPrevious, isTrue);
@@ -160,7 +160,7 @@ void main() {
           createTestFlashcard(id: 1, noteId: 1, question: 'Q1', answer: 'A1'),
         ];
 
-        int currentIndex = 0;
+        int currentIndex = flashcards.length - 1;
         final canGoPrevious = currentIndex > 0;
 
         expect(canGoPrevious, isFalse);
@@ -641,6 +641,8 @@ void main() {
           createTestFlashcard(id: 1, noteId: 1, question: 'Q1', answer: 'A1'),
           createTestFlashcard(id: 2, noteId: 1, question: 'Q2', answer: 'A2'),
         ];
+
+        expect(flashcards.length, 2);
 
         int currentIndex = 0;
         final reviewedCards = <int, int>{};

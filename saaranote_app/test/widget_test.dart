@@ -5,16 +5,21 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:saaranote_app/main.dart';
 
 void main() {
-  testWidgets('App loads home screen', (WidgetTester tester) async {
+  testWidgets('Home screen renders basic UI', (WidgetTester tester) async {
+    // Build the app and trigger a frame.
     await tester.pumpWidget(const MyApp());
-    await tester.pumpAndSettle();
 
+    // Verify the app bar title renders.
     expect(find.text('SaaraNote'), findsOneWidget);
-    expect(find.text('Search notes, topics, keywords'), findsOneWidget);
+
+    // Verify primary actions are present.
+    expect(find.byIcon(Icons.draw), findsOneWidget);
+    expect(find.byIcon(Icons.add), findsOneWidget);
   });
 }

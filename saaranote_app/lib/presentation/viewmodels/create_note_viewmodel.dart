@@ -54,6 +54,7 @@ class CreateNoteViewModel extends ChangeNotifier {
     required String content,
     String? color,
     bool generateSummary = true,
+    bool useAiEnhancement = true,
     bool generateFlashcards = true,
     domain.RichTextContent? richContent,
     List<String>? drawingIds,
@@ -75,6 +76,7 @@ class CreateNoteViewModel extends ChangeNotifier {
         content: content,
         color: color,
         generateSummary: generateSummary,
+        useAiEnhancement: useAiEnhancement,
         generateFlashcards: generateFlashcards,
         richContent: richContent,
         drawingIds: drawingIds,
@@ -114,6 +116,7 @@ class CreateNoteViewModel extends ChangeNotifier {
     String title = '',
     String? color,
     bool generateSummary = true,
+    bool useAiEnhancement = true,
     bool generateFlashcards = true,
   }) async {
     _isLoading = true;
@@ -131,6 +134,7 @@ class CreateNoteViewModel extends ChangeNotifier {
         title: title,
         color: color,
         generateSummary: generateSummary,
+        useAiEnhancement: useAiEnhancement,
         generateFlashcards: generateFlashcards,
       );
 
@@ -159,6 +163,7 @@ class CreateNoteViewModel extends ChangeNotifier {
     String title = '',
     String? color,
     bool generateSummary = true,
+    bool useAiEnhancement = true,
     bool generateFlashcards = true,
   }) async {
     _isLoading = true;
@@ -176,6 +181,7 @@ class CreateNoteViewModel extends ChangeNotifier {
         title: title,
         color: color,
         generateSummary: generateSummary,
+        useAiEnhancement: useAiEnhancement,
         generateFlashcards: generateFlashcards,
       );
 

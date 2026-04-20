@@ -11,7 +11,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/domain/entities/note.dart';
-import 'package:saaranote_app/domain/usecases/get_all_notes_usecase.dart';
 
 void main() {
   group('PHASE 3: Search & Organization Tests', () {

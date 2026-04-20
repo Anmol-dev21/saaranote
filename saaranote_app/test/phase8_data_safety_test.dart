@@ -3,7 +3,6 @@ import 'package:saaranote_app/data/datasources/local/database_helper.dart';
 import 'package:saaranote_app/domain/entities/note.dart';
 import 'package:saaranote_app/domain/entities/flashcard.dart';
 import 'package:saaranote_app/domain/entities/note_summary.dart';
-import 'package:saaranote_app/domain/entities/rich_text_content.dart' as domain;
 
 /// PHASE 8: DATA SAFETY TESTS
 /// 

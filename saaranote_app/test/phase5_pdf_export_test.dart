@@ -333,6 +333,8 @@ void main() {
           content: 'Test content',
         );
 
+        expect(note.content, 'Test content');
+
         // Required sections
         final sections = ['Title', 'Content', 'Key Points'];
         expect(sections, contains('Title'));
@@ -347,11 +349,10 @@ void main() {
           summaryText: 'Test summary',
         );
 
-        final hasSummary = summary != null;
-        expect(hasSummary, isTrue);
+        expect(summary, isNotNull);
 
         summary = null;
-        expect(summary == null, isTrue);
+        expect(summary, isNull);
       });
 
       test('6.3 Flashcards section is conditional', () {
@@ -359,8 +360,8 @@ void main() {
           createTestFlashcard(noteId: 1, question: 'Q', answer: 'A'),
         ];
 
-        final hasFlashcards = flashcards != null && flashcards.isNotEmpty;
-        expect(hasFlashcards, isTrue);
+        expect(flashcards, isNotNull);
+        expect(flashcards.isNotEmpty, isTrue);
 
         flashcards = [];
         expect(flashcards.isEmpty, isTrue);
@@ -528,14 +529,12 @@ void main() {
         NoteSummary? summary;
 
         expect(summary, isNull);
-        expect(summary == null, isTrue);
       });
 
       test('8.4 Null flashcards handling', () {
         List<Flashcard>? flashcards;
 
         expect(flashcards, isNull);
-        expect(flashcards == null, isTrue);
       });
 
       test('8.5 Empty content generates empty key points', () {

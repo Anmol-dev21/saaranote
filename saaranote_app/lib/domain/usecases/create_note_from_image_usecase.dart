@@ -9,8 +9,7 @@ import '../../core/services/ocr_service.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
-import '../../core/utils/summary_formatter.dart';
-import '../../core/ai_engine.dart';
+import '../../core/services/hybrid_summary_service.dart';
 
 /// Use case for creating a note from an image using OCR, with automatic
 /// summarization and flashcard generation
@@ -19,14 +18,14 @@ class CreateNoteFromImageUseCase {
   final SummaryRepository _summaryRepository;
   final FlashcardRepository _flashcardRepository;
   final OcrService _ocrService;
-  final AIEngine? _aiEngine;
+  final HybridSummaryService _hybridSummaryService;
 
   CreateNoteFromImageUseCase(
     this._noteRepository,
     this._summaryRepository,
     this._flashcardRepository,
     this._ocrService,
-    this._aiEngine,
+    this._hybridSummaryService,
   );
 
   /// Execute the use case to create a note from an image
@@ -80,12 +79,15 @@ class CreateNoteFromImageUseCase {
     NoteSummary? createdSummary;
     if (params.generateSummary) {
       try {
-        final summaryText = await _generateSummaryText(cleanedContent);
-        
-        if (summaryText.isNotEmpty) {
+        final summaryText = Summarizer.generateDetailedSummary(cleanedContent);
+        final finalSummary = params.useAiEnhancement
+          ? await _hybridSummaryService.generateFinalSummary(summaryText)
+          : summaryText;
+
+        if (finalSummary.isNotEmpty) {
           final summary = NoteSummary(
             noteId: noteId,
-            summaryText: summaryText,
+            summaryText: finalSummary,
             createdAt: now,
           );
           createdSummary = await _summaryRepository.create(summary);
@@ -128,24 +130,6 @@ class CreateNoteFromImageUseCase {
     );
   }
 
-  Future<String> _generateSummaryText(String content) async {
-    if (_aiEngine == null) {
-      return Summarizer.generateDetailedSummary(content);
-    }
-
-    final result = await _aiEngine.generateSummary(text: content);
-    final structuredText = SummaryFormatter.formatStructuredSummary(
-      result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
-    );
-    if (structuredText.isNotEmpty) return structuredText;
-
-    return result.detailedSummary.isNotEmpty
-        ? result.detailedSummary
-        : Summarizer.generateDetailedSummary(content);
-  }
-
   /// Generate a title from the content if not provided
   String _generateTitle(String content) {
     final sentences = TextProcessor.splitIntoSentences(content);
@@ -169,6 +153,7 @@ class CreateNoteFromImageParams {
   final String title;
   final String? color;
   final bool generateSummary;
+  final bool useAiEnhancement;
   final bool generateFlashcards;
 
   CreateNoteFromImageParams({
@@ -176,6 +161,7 @@ class CreateNoteFromImageParams {
     this.title = '',
     this.color,
     this.generateSummary = true,
+    this.useAiEnhancement = true,
     this.generateFlashcards = true,
   });
 }

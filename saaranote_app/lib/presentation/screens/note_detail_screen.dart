@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/note_detail_viewmodel.dart';
-import '../../domain/entities/drawing.dart';
-import '../../domain/entities/rich_text_content.dart' as domain;
-import '../../core/design_system/app_components.dart';
-import '../../core/design_system/app_spacing.dart';
-import '../../core/design_system/app_typography.dart';
+import '../utils/summary_parser.dart';
 
 /// Screen displaying note details with summaries and flashcards
 class NoteDetailScreen extends StatefulWidget {
@@ -24,6 +20,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // Load note details when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NoteDetailViewModel>().loadNoteDetails(widget.noteId);
     });
@@ -31,8 +28,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Note Details'),
@@ -97,194 +92,151 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           }
 
           final note = viewModel.note!;
-          final contentStyle = AppTypography.body(
-            color: theme.colorScheme.onSurface,
-          );
 
           return RefreshIndicator(
             onRefresh: () => viewModel.refresh(),
             child: SingleChildScrollView(
-              padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Note Title
                   Text(
                     note.title,
-                    style: AppTypography.h1(
-                      color: theme.colorScheme.onSurface,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  AppSpacing.vGapSm,
-
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
+                  const SizedBox(height: 8),
+                  
+                  // Metadata
+                  Row(
                     children: [
-                      _buildMetaPill(
-                        icon: Icons.access_time,
-                        label: _formatDate(note.updatedAt),
+                      Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDate(note.updatedAt),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                      if (viewModel.hasSummaries)
-                        _buildMetaPill(
-                          icon: Icons.description,
-                          label: '${viewModel.summaryCount} summary',
+                      const SizedBox(width: 16),
+                      if (viewModel.hasSummaries) ...[
+                        Icon(Icons.description, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${viewModel.summaryCount} summary',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      if (viewModel.hasFlashcards)
-                        _buildMetaPill(
-                          icon: Icons.psychology,
-                          label: '${viewModel.flashcardCount} cards',
+                      ],
+                      const SizedBox(width: 16),
+                      if (viewModel.hasFlashcards) ...[
+                        Icon(Icons.psychology, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${viewModel.flashcardCount} cards',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
+                      ],
                     ],
                   ),
-                  AppSpacing.vGapLg,
-
+                  const Divider(height: 32),
+                  
+                  // Note Content
                   _buildSection(
                     title: 'Content',
                     icon: Icons.article,
-                    child: note.hasRichContent
-                        ? SelectableText.rich(
-                            _buildRichTextSpan(note.richContent!, contentStyle),
-                          )
-                        : SelectableText(
-                            note.content,
-                            style: contentStyle,
-                          ),
-                  ),
-
-                  if (viewModel.hasDrawings) ...[
-                    AppSpacing.vGapLg,
-                    _buildSection(
-                      title: 'Drawings',
-                      icon: Icons.draw,
-                      child: Column(
-                        children: viewModel.drawings.map((drawing) {
-                          return Padding(
-                            padding: AppSpacing.verticalXs,
-                            child: Container(
-                              padding: AppSpacing.paddingSm,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: AppSpacing.borderRadiusMd,
-                                border: Border.all(
-                                  color: theme.dividerColor.withOpacity(0.4),
-                                ),
-                              ),
-                              child: AspectRatio(
-                                aspectRatio: 4 / 3,
-                                child: ClipRRect(
-                                  borderRadius: AppSpacing.borderRadiusSm,
-                                  child: CustomPaint(
-                                    painter: _DrawingPreviewPainter(drawing: drawing),
-                                    child: const SizedBox.expand(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                    child: SelectableText(
+                      note.content,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
                       ),
                     ),
-                  ],
-
+                  ),
+                  
+                  // Summary Section
                   if (viewModel.hasSummaries) ...[
-                    AppSpacing.vGapLg,
+                    const SizedBox(height: 24),
                     _buildSection(
                       title: 'Summary',
                       icon: Icons.description,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: viewModel.summaries.map((summary) {
-                          return Padding(
-                            padding: AppSpacing.verticalXs,
-                            child: Container(
-                              padding: AppSpacing.paddingMd,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: AppSpacing.borderRadiusMd,
-                                border: Border.all(
-                                  color: theme.dividerColor.withOpacity(0.4),
-                                ),
-                              ),
-                              child: SelectableText(
-                                summary.summaryText,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  height: 1.6,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                          );
+                          return _buildSummaryCard(summary.summaryText);
                         }).toList(),
                       ),
                     ),
                   ],
-
+                  
+                  // Flashcards Section
                   if (viewModel.hasFlashcards) ...[
-                    AppSpacing.vGapLg,
+                    const SizedBox(height: 24),
                     _buildSection(
                       title: 'Flashcards',
                       icon: Icons.psychology,
                       child: Column(
                         children: viewModel.flashcards.map((flashcard) {
-                          return Padding(
-                            padding: AppSpacing.verticalXs,
-                            child: Card(
-                              elevation: 0,
-                              color: theme.colorScheme.surfaceContainerLow,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                                side: BorderSide(
-                                  color: theme.dividerColor.withOpacity(0.4),
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ExpansionTile(
+                              title: Text(
+                                flashcard.question,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              child: ExpansionTile(
-                                tilePadding: AppSpacing.paddingMd,
-                                childrenPadding: AppSpacing.paddingMd,
-                                title: Text(
-                                  flashcard.question,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                              leading: CircleAvatar(
+                                backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
+                                child: Text(
+                                  '${flashcard.confidenceLevel}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                leading: CircleAvatar(
-                                  backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
-                                  child: Text(
-                                    '${flashcard.confidenceLevel}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                children: [
-                                  Column(
+                              ),
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Answer',
-                                        style: theme.textTheme.labelMedium?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
+                                      const Text(
+                                        'Answer:',
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
+                                          color: Colors.grey,
                                         ),
                                       ),
-                                      AppSpacing.vGapXs,
+                                      const SizedBox(height: 4),
                                       SelectableText(
                                         flashcard.answer,
-                                        style: theme.textTheme.bodyMedium,
+                                        style: const TextStyle(fontSize: 14),
                                       ),
                                       if (flashcard.lastReviewedAt != null) ...[
-                                        AppSpacing.vGapSm,
+                                        const SizedBox(height: 8),
                                         Text(
                                           'Last reviewed: ${_formatDate(flashcard.lastReviewedAt!)}',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurfaceVariant,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
                                           ),
                                         ),
                                       ],
                                     ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -302,10 +254,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   Future<void> _handleExportPdf(BuildContext context) async {
     final viewModel = context.read<NoteDetailViewModel>();
+    
+    // Call the viewmodel to export PDF
     await viewModel.exportNoteAsPdf();
-
+    
+    // Show success or error message
     if (!mounted) return;
-
+    
     if (viewModel.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -346,74 +301,163 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     required IconData icon,
     required Widget child,
   }) {
-    final theme = Theme.of(context);
-    return AppCard(
-      padding: AppSpacing.cardContentPadding,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(String summaryText) {
+    final parsed = SummaryParser.parse(summaryText);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                height: 32,
-                width: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
+          if (parsed.isValid) _buildAiEnhancedLabel() else _buildFallbackBanner(),
+          const SizedBox(height: 8),
+          if (parsed.isValid)
+            _buildStructuredSummary(parsed)
+          else
+            SelectableText(
+              summaryText,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
               ),
-              AppSpacing.hGapSm,
-              Text(
-                title,
-                style: AppTypography.h3(
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          AppSpacing.vGapSm,
-          child,
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildMetaPill({
-    required IconData icon,
-    required String label,
-  }) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-        border: Border.all(
-          color: theme.dividerColor.withOpacity(0.4),
+  Widget _buildAiEnhancedLabel() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.green[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green[200]!),
+        ),
+        child: const Text(
+          'AI Enhanced',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.green,
+          ),
         ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    );
+  }
+
+  Widget _buildFallbackBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          AppSpacing.hGapXs,
           Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            'Basic summary used (AI unavailable)',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.orange,
+            ),
+          ),
+          SizedBox(height: 2),
+          Text(
+            'Something went wrong. Showing basic summary.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.orange,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStructuredSummary(SummaryParseResult parsed) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          parsed.title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          parsed.summary,
+          style: const TextStyle(
+            fontSize: 14,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Key Points',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: parsed.keyPoints.map((point) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('- ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      point,
+                      style: const TextStyle(fontSize: 14, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -436,145 +480,5 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (level >= 4) return Colors.green;
     if (level >= 2) return Colors.orange;
     return Colors.red;
-  }
-
-  TextSpan _buildRichTextSpan(
-    domain.RichTextContent content,
-    TextStyle baseStyle,
-  ) {
-    if (content.spans.isEmpty) {
-      return TextSpan(text: content.plainText, style: baseStyle);
-    }
-
-    final spans = <TextSpan>[];
-    int current = 0;
-
-    for (final span in content.spans) {
-      if (span.start > current) {
-        spans.add(TextSpan(
-          text: content.plainText.substring(current, span.start),
-          style: baseStyle,
-        ));
-      }
-
-      final style = _buildTextStyle(span.style, baseStyle);
-      spans.add(TextSpan(
-        text: content.plainText.substring(span.start, span.end),
-        style: style,
-      ));
-      current = span.end;
-    }
-
-    if (current < content.plainText.length) {
-      spans.add(TextSpan(
-        text: content.plainText.substring(current),
-        style: baseStyle,
-      ));
-    }
-
-    return TextSpan(style: baseStyle, children: spans);
-  }
-
-  TextStyle _buildTextStyle(domain.TextStyle style, TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      fontWeight: style.bold ? FontWeight.w600 : baseStyle.fontWeight,
-      fontStyle: style.italic ? FontStyle.italic : baseStyle.fontStyle,
-      decoration: style.underline ? TextDecoration.underline : baseStyle.decoration,
-      fontSize: style.fontSize ?? baseStyle.fontSize,
-      color: style.textColor != null ? _parseHexColor(style.textColor!) : baseStyle.color,
-      backgroundColor: style.highlightColor != null
-          ? _parseHexColor(style.highlightColor!)
-          : baseStyle.backgroundColor,
-    );
-  }
-
-  Color _parseHexColor(String value) {
-    final hex = value.replaceFirst('#', '');
-    final colorValue = int.parse(hex, radix: 16);
-    return Color(0xFF000000 | colorValue);
-  }
-}
-
-class _DrawingPreviewPainter extends CustomPainter {
-  final Drawing drawing;
-
-  _DrawingPreviewPainter({
-    required this.drawing,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.saveLayer(Offset.zero & size, Paint());
-    for (final stroke in drawing.strokes) {
-      _drawStroke(canvas, stroke);
-    }
-    canvas.restore();
-  }
-
-  void _drawStroke(Canvas canvas, DrawingStroke stroke) {
-    if (stroke.points.isEmpty) return;
-
-    final paint = Paint()
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke.style.width;
-
-    final colorHex = stroke.style.color.replaceFirst('#', '');
-    final colorValue = int.parse(colorHex, radix: 16);
-    final baseColor = Color(0xFF000000 | colorValue);
-
-    paint.color = baseColor.withOpacity(stroke.style.opacity);
-
-    switch (stroke.style.type) {
-      case StrokeType.pen:
-        break;
-      case StrokeType.highlighter:
-        paint.strokeWidth = stroke.style.width * 1.5;
-        paint.color = paint.color.withOpacity(0.4);
-        break;
-      case StrokeType.eraser:
-        paint.color = Colors.white;
-        paint.blendMode = BlendMode.clear;
-        break;
-    }
-
-    final path = Path();
-    if (stroke.points.length == 1) {
-      final point = stroke.points.first;
-      canvas.drawCircle(
-        Offset(point.x, point.y),
-        paint.strokeWidth / 2,
-        paint..style = PaintingStyle.fill,
-      );
-    } else {
-      path.moveTo(stroke.points.first.x, stroke.points.first.y);
-
-      for (int i = 1; i < stroke.points.length - 1; i++) {
-        final current = stroke.points[i];
-        final next = stroke.points[i + 1];
-
-        final controlX = (current.x + next.x) / 2;
-        final controlY = (current.y + next.y) / 2;
-
-        path.quadraticBezierTo(
-          current.x,
-          current.y,
-          controlX,
-          controlY,
-        );
-      }
-
-      final lastPoint = stroke.points.last;
-      path.lineTo(lastPoint.x, lastPoint.y);
-
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DrawingPreviewPainter oldDelegate) {
-    return oldDelegate.drawing.id != drawing.id ||
-        oldDelegate.drawing.totalPoints != drawing.totalPoints;
   }
 }

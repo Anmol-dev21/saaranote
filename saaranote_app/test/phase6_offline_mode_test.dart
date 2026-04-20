@@ -268,6 +268,8 @@ void main() {
           content: 'Content about Flutter. What is Dart? Dart is a language.',
         );
 
+        expect(note.title, 'Study Note');
+
         // Step 2: Generate summary locally
         final summary = NoteSummary(
           id: 1,

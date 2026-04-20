@@ -9,8 +9,7 @@ import '../../core/services/pdf_text_service.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
-import '../../core/utils/summary_formatter.dart';
-import '../../core/ai_engine.dart';
+import '../../core/services/hybrid_summary_service.dart';
 
 /// Use case for creating a note from a PDF file with automatic
 /// summarization and flashcard generation
@@ -19,14 +18,14 @@ class CreateNoteFromPdfUseCase {
   final SummaryRepository _summaryRepository;
   final FlashcardRepository _flashcardRepository;
   final PdfTextService _pdfTextService;
-  final AIEngine? _aiEngine;
+  final HybridSummaryService _hybridSummaryService;
 
   CreateNoteFromPdfUseCase(
     this._noteRepository,
     this._summaryRepository,
     this._flashcardRepository,
     this._pdfTextService,
-    this._aiEngine,
+    this._hybridSummaryService,
   );
 
   /// Execute the use case to create a note from a PDF file
@@ -54,9 +53,7 @@ class CreateNoteFromPdfUseCase {
     final cleanedContent = TextProcessor.cleanText(extractedText);
     
     if (cleanedContent.isEmpty) {
-      throw CreateNoteFromPdfException(
-        'No text found in the PDF. If this is a scanned PDF, try image import/OCR.',
-      );
+      throw CreateNoteFromPdfException('No text found in the PDF');
     }
 
     // Validate minimum content length
@@ -82,12 +79,15 @@ class CreateNoteFromPdfUseCase {
     NoteSummary? createdSummary;
     if (params.generateSummary) {
       try {
-        final summaryText = await _generateSummaryText(cleanedContent);
-        
-        if (summaryText.isNotEmpty) {
+        final summaryText = Summarizer.generateDetailedSummary(cleanedContent);
+        final finalSummary = params.useAiEnhancement
+          ? await _hybridSummaryService.generateFinalSummary(summaryText)
+          : summaryText;
+
+        if (finalSummary.isNotEmpty) {
           final summary = NoteSummary(
             noteId: noteId,
-            summaryText: summaryText,
+            summaryText: finalSummary,
             createdAt: now,
           );
           createdSummary = await _summaryRepository.create(summary);
@@ -129,24 +129,6 @@ class CreateNoteFromPdfUseCase {
     );
   }
 
-  Future<String> _generateSummaryText(String content) async {
-    if (_aiEngine == null) {
-      return Summarizer.generateDetailedSummary(content);
-    }
-
-    final result = await _aiEngine.generateSummary(text: content);
-    final structuredText = SummaryFormatter.formatStructuredSummary(
-      result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
-    );
-    if (structuredText.isNotEmpty) return structuredText;
-
-    return result.detailedSummary.isNotEmpty
-        ? result.detailedSummary
-        : Summarizer.generateDetailedSummary(content);
-  }
-
   /// Generate a title from the content
   String _generateTitle(String content) {
     final words = content.split(' ').where((w) => w.isNotEmpty).take(5).toList();
@@ -165,6 +147,7 @@ class CreateNoteFromPdfParams {
   final File pdfFile;
   final String title;
   final bool generateSummary;
+  final bool useAiEnhancement;
   final bool generateFlashcards;
   final String? color;
 
@@ -172,6 +155,7 @@ class CreateNoteFromPdfParams {
     required this.pdfFile,
     this.title = '',
     this.generateSummary = true,
+    this.useAiEnhancement = true,
     this.generateFlashcards = true,
     this.color,
   });

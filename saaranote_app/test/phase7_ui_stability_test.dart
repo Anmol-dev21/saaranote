@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/domain/entities/note.dart';
-import 'package:saaranote_app/domain/entities/flashcard.dart';
-import 'package:saaranote_app/domain/entities/note_summary.dart';
 import 'package:saaranote_app/presentation/viewmodels/note_viewmodel.dart';
 import 'package:saaranote_app/presentation/viewmodels/note_detail_viewmodel.dart';
 import 'package:saaranote_app/presentation/viewmodels/flashcard_viewmodel.dart';

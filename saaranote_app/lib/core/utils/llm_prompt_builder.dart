@@ -1,17 +1,27 @@
+/// Prompt builder for LLM summary rewriting.
 class LlmPromptBuilder {
-  /// Build a lightweight prompt instructing the local LLM to rewrite a
-  /// structured summary into a human-friendly, well-formatted summary.
+  /// Build a structured prompt for rewriting summaries.
   static String buildSummaryPrompt(String structuredSummary) {
-    return '''Rewrite the following structured summary into a concise, readable, and professional summary.
-Keep the important points and preserve any titles or key bullets. Format the result with a clear Title, a short Summary, and a few Key Points.
+    final cleaned = structuredSummary.trim();
+    final content = cleaned.isEmpty
+        ? 'Not enough information to summarize.'
+        : cleaned;
 
-Input:
-$structuredSummary
+    return '''You are a rewriting assistant. Use ONLY the content below.
+Do NOT add new facts. Do NOT guess or speculate.
+Use simple language and short sentences.
+If the content is insufficient, say: Not enough information to summarize.
 
-Output format:
+Return the result in this exact format:
 Title: <short title>
-Summary: <one to three sentences>
-Key Points: <bullet points separated by commas or newlines>
+Summary: <2-4 sentences>
+Key Points:
+- <bullet 1>
+- <bullet 2>
+- <bullet 3>
+
+Content:
+$content
 ''';
   }
 }

@@ -6,12 +6,9 @@ import 'core/design_system/app_theme.dart';
 
 // Data layer
 import 'data/datasources/local/database_helper.dart';
-import 'data/datasources/local/drawing_local_data_source.dart';
 import 'data/repositories/note_repository_impl.dart';
 import 'data/repositories/summary_repository_impl.dart';
 import 'data/repositories/flashcard_repository_impl.dart';
-import 'data/repositories/chat_repository_impl.dart';
-import 'data/repositories/index_repository_impl.dart';
 
 // Domain layer
 import 'domain/usecases/get_all_notes_usecase.dart';
@@ -24,9 +21,6 @@ import 'domain/usecases/create_note_from_pdf_usecase.dart';
 import 'domain/usecases/get_summaries_for_note_usecase.dart';
 import 'domain/usecases/get_flashcards_for_note_usecase.dart';
 import 'domain/usecases/search_notes_usecase.dart';
-import 'domain/usecases/ask_question_usecase.dart';
-import 'domain/repositories/chat_repository.dart';
-import 'domain/repositories/index_repository.dart';
 
 // Core services
 import 'core/services/ocr_service.dart';
@@ -34,19 +28,14 @@ import 'core/services/pdf_export_service.dart';
 import 'core/services/pdf_text_service.dart';
 import 'core/services/rich_text_service.dart';
 import 'core/services/drawing_service.dart';
-import 'core/services/retrieval_service.dart';
-import 'core/services/generation_service.dart';
-import 'core/services/settings_service.dart';
-import 'core/services/offline_qa_service.dart';
-import 'core/ai_engine.dart';
+import 'core/services/llm_service.dart';
+import 'core/services/hybrid_summary_service.dart';
 
 // Presentation layer
 import 'presentation/viewmodels/note_viewmodel.dart';
 import 'presentation/viewmodels/create_note_viewmodel.dart';
 import 'presentation/viewmodels/note_detail_viewmodel.dart';
 import 'presentation/viewmodels/note_editor_viewmodel.dart';
-import 'presentation/viewmodels/chat_viewmodel.dart';
-import 'presentation/viewmodels/settings_viewmodel.dart';
 import 'presentation/screens/home_screen.dart';
 
 void main() async {
@@ -66,35 +55,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize dependencies
     final databaseHelper = DatabaseHelper.instance;
-
+    
     // Repositories
     final noteRepository = NoteRepositoryImpl(databaseHelper);
     final summaryRepository = SummaryRepositoryImpl(databaseHelper);
     final flashcardRepository = FlashcardRepositoryImpl(databaseHelper);
-    final chatRepository = ChatRepositoryImpl(databaseHelper);
-    final indexRepository = IndexRepositoryImpl(databaseHelper);
-
+    
     // Services
     final ocrService = OcrService();
     final pdfExportService = PdfExportService();
-    final pdfTextService = PdfTextService(ocrService);
+    final pdfTextService = PdfTextService();
     final richTextService = RichTextService();
     final drawingService = DrawingService();
-    final drawingLocalDataSource = DrawingLocalDataSource(
-      databaseHelper,
-      drawingService,
-    );
-    final aiEngine = AIEngine();
-    final retrievalService = RetrievalService(indexRepository);
-    final queryProcessor = QueryProcessor();
-    final generationService = GenerationService(aiEngine: aiEngine);
-    final offlineQaService = OfflineQaService(
-      retrievalService: retrievalService,
-      queryProcessor: queryProcessor,
-      aiEngine: aiEngine,
-    );
-    final settingsService = SettingsService();
-
+    final llmService = LlmService();
+    final hybridSummaryService = HybridSummaryService(llmService: llmService);
+    
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
     final getNoteByIdUseCase = GetNoteByIdUseCase(noteRepository);
@@ -108,42 +83,29 @@ class MyApp extends StatelessWidget {
       noteRepository,
       summaryRepository,
       flashcardRepository,
-      aiEngine,
+      hybridSummaryService,
     );
     final createNoteFromImageUseCase = CreateNoteFromImageUseCase(
       noteRepository,
       summaryRepository,
       flashcardRepository,
       ocrService,
-      aiEngine,
+      hybridSummaryService,
     );
     final createNoteFromPdfUseCase = CreateNoteFromPdfUseCase(
       noteRepository,
       summaryRepository,
       flashcardRepository,
       pdfTextService,
-      aiEngine,
+      hybridSummaryService,
     );
     final getSummariesForNoteUseCase = GetSummariesForNoteUseCase(summaryRepository);
     final getFlashcardsForNoteUseCase = GetFlashcardsForNoteUseCase(flashcardRepository);
     final searchNotesUseCase = SearchNotesUseCase(noteRepository);
-    final askQuestionUseCase = AskQuestionUseCase(
-      chatRepository: chatRepository,
-      retrievalService: retrievalService,
-      generationService: generationService,
-      queryProcessor: queryProcessor,
-      offlineQaService: offlineQaService,
-    );
 
     return MultiProvider(
       providers: [
-        Provider<ChatRepository>.value(value: chatRepository),
-        Provider<IndexRepository>.value(value: indexRepository),
-        Provider<RetrievalService>.value(value: retrievalService),
-        Provider<QueryProcessor>.value(value: queryProcessor),
-        Provider<GenerationService>.value(value: generationService),
-        Provider<OfflineQaService>.value(value: offlineQaService),
-        Provider<AskQuestionUseCase>.value(value: askQuestionUseCase),
+        // ViewModels
         ChangeNotifierProvider(
           create: (_) => NoteViewModel(
             getAllNotesUseCase,
@@ -158,7 +120,6 @@ class MyApp extends StatelessWidget {
             createNoteFromTextUseCase,
             createNoteFromImageUseCase,
             createNoteFromPdfUseCase,
-            drawingLocalDataSource,
           ),
         ),
         ChangeNotifierProvider(
@@ -167,7 +128,6 @@ class MyApp extends StatelessWidget {
             getSummariesForNoteUseCase,
             getFlashcardsForNoteUseCase,
             pdfExportService,
-            drawingLocalDataSource,
           ),
         ),
         ChangeNotifierProvider(
@@ -176,34 +136,14 @@ class MyApp extends StatelessWidget {
             drawingService,
           ),
         ),
-        ChangeNotifierProvider(
-          create: (_) => ChatViewModel(
-            chatRepository,
-            askQuestionUseCase,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SettingsViewModel(settingsService)..load(),
-        ),
       ],
-      child: Consumer<SettingsViewModel>(
-        builder: (context, settings, child) {
-          return MaterialApp(
-            title: 'SaaraNote',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme(),
-            darkTheme: AppTheme.darkTheme(),
-            themeMode: settings.themeMode,
-            builder: (context, appChild) {
-              final data = MediaQuery.of(context);
-              return MediaQuery(
-                data: data.copyWith(textScaler: TextScaler.linear(settings.textScale)),
-                child: appChild ?? const SizedBox.shrink(),
-              );
-            },
-            home: const HomeScreen(),
-          );
-        },
+      child: MaterialApp(
+        title: 'SaaraNote',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme(),
+        darkTheme: AppTheme.darkTheme(),
+        themeMode: ThemeMode.system,
+        home: const HomeScreen(),
       ),
     );
   }
