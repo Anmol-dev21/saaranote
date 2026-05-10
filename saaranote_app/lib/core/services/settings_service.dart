@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'shared_preferences_stub.dart';
 
 class SettingsData {
   final ThemeMode themeMode;

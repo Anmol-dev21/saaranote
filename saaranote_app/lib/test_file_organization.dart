@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../domain/entities/file_metadata.dart';
-import '../domain/repositories/file_organization_repository.dart';
 import '../core/services/file_organization_service.dart';
 import '../domain/usecases/organize_file_usecase.dart';
 import '../domain/usecases/get_storage_stats_usecase.dart';
@@ -22,22 +20,14 @@ Future<void> testFileOrganizationSystem() async {
     final baseStoragePath = '${appDir.path}/saaranote/organized_files';
     final fileService = FileOrganizationService(baseStoragePath);
     
-    final organizeUseCase = OrganizeFileUseCase(
-      repository: repository,
-      fileService: fileService,
-    );
-    
-    final statsUseCase = GetStorageStatsUseCase(
-      repository: repository,
-      fileService: fileService,
-    );
+    final statsUseCase = GetStorageStatsUseCase(repository, fileService);
     print('   ✅ Dependencies initialized\n');
 
     // 2. Test subject detection
     print('2️⃣ Testing subject detection...');
-    final mathSubject = fileService.detectSubject('calculus_homework.pdf', null);
-    final physicsSubject = fileService.detectSubject('physics_lab_report.pdf', null);
-    final unknownSubject = fileService.detectSubject('random_file.txt', null);
+    final mathSubject = await fileService.detectSubject('calculus_homework.pdf');
+    final physicsSubject = await fileService.detectSubject('physics_lab_report.pdf');
+    final unknownSubject = await fileService.detectSubject('random_file.txt');
     
     print('   • calculus_homework.pdf → $mathSubject');
     print('   • physics_lab_report.pdf → $physicsSubject');
@@ -86,8 +76,10 @@ Future<void> testFileOrganizationSystem() async {
     
     // Retrieve file
     final retrievedFile = await repository.getFileById(addedFile.id!);
-    assert(retrievedFile != null, 'File not found');
-    assert(retrievedFile!.fileName == 'sample.pdf', 'File name mismatch');
+    if (retrievedFile == null) {
+      throw Exception('File not found during test');
+    }
+    assert(retrievedFile.fileName == 'sample.pdf', 'File name mismatch');
     print('   • Retrieved file: ${retrievedFile.fileName}');
     
     // Query by subject
@@ -96,12 +88,10 @@ Future<void> testFileOrganizationSystem() async {
     print('   • Found ${testingFiles.length} file(s) for Testing subject');
     
     // Update file
-    final updatedFile = await repository.updateFile(
-      retrievedFile.copyWith(
-        organizationStatus: OrganizationStatus.manual,
-        customFolder: '/custom/path',
-      ),
-    );
+    final updatedFile = await repository.updateFile(retrievedFile.copyWith(
+      organizationStatus: OrganizationStatus.manual,
+      customFolder: '/custom/path',
+    ));
     print('   • Updated organization status to: ${updatedFile.organizationStatus}');
     
     // Get all subjects

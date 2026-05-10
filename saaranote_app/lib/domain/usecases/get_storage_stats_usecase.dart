@@ -57,6 +57,10 @@ class StorageStats {
     return _formatBytes(availableSpace);
   }
 
+  // Backwards-compatible getters used by some tests/consumers.
+  String get formattedTotalSize => formatTotalSize();
+  String get formattedAvailableSpace => formatAvailableSpace();
+
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';

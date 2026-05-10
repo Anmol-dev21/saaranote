@@ -25,11 +25,11 @@ class TestDocInfo {
       {this.title, this.author, this.creator, this.subject, this.keywords});
 
   TestDocInfo.fromPDFDocInfo(PDFDocInfo pdfDocInfo)
-      : this.title = pdfDocInfo.title,
-        this.author = pdfDocInfo.author,
-        this.creator = pdfDocInfo.creator,
-        this.subject = pdfDocInfo.subject,
-        this.keywords = pdfDocInfo.keywords!.join(",");
+      : title = pdfDocInfo.title,
+        author = pdfDocInfo.author,
+        creator = pdfDocInfo.creator,
+        subject = pdfDocInfo.subject,
+        keywords = pdfDocInfo.keywords!.join(",");
 
   @override
   bool operator ==(Object other) =>

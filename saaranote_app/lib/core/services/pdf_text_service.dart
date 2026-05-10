@@ -83,7 +83,7 @@ class PdfTextService {
           height: renderHeight,
         );
 
-        final pageText = await _ocrService!.extractTextFromImageBytes(
+        final pageText = await _ocrService.extractTextFromImageBytes(
           pageImage.pixels,
           pageImage.width,
           pageImage.height,

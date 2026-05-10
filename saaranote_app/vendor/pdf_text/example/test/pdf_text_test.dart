@@ -147,11 +147,10 @@ void main() async {
 
       int exceptionCount = 0;
 
-      final fromFile =
-          () => PDFDoc.fromFile(encryptedPdf, password: "invalid-password");
-      final fromPath = () =>
+      fromFile() => PDFDoc.fromFile(encryptedPdf, password: "invalid-password");
+      fromPath() =>
           PDFDoc.fromPath(encryptedPdf.path, password: "invalid-password");
-      final fromURL = () => PDFDoc.fromURL(
+      fromURL() => PDFDoc.fromURL(
           "http://localhost/${basename(encryptedPdf.path)}",
           password: "invalid-password");
 

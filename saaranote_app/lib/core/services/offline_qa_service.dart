@@ -282,7 +282,7 @@ class OfflineQaService {
   Future<String> _buildStructuredSummary(String text, {required int maxChars}) async {
     if (_aiEngine == null) return text;
     final truncated = _truncate(text, maxChars);
-    final result = await _aiEngine!.generateSummary(text: truncated);
+    final result = await _aiEngine.generateSummary(text: truncated);
     return SummaryFormatter.formatStructuredSummary(
       result.structured,
       includeSections: true,

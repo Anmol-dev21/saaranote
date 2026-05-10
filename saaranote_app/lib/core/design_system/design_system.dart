@@ -1,6 +1,6 @@
 /// SaaraNote Design System
 /// Export file for easy access to all design system components
-library design_system;
+library;
 
 export 'app_colors.dart';
 export 'app_typography.dart';

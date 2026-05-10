@@ -10,7 +10,7 @@ import 'package:pdf_render/pdf_render_widgets.dart';
 void main(List<String> args) => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   _MyAppState createState() => _MyAppState();
@@ -127,6 +127,7 @@ class _MyAppState extends State<MyApp> {
     } else {
       doc = await PdfDocument.openAsset('assets/hello.pdf');
     }
+
 
     try {
       final page = await doc.getPage(1);

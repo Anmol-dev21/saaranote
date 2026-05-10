@@ -35,9 +35,9 @@ class PdfTestUtils {
             build: (pw.Context context) =>
                 page.map((line) => pw.Paragraph(text: line)).toList()))
         .toList();
-    pdfPages.forEach((page) {
+    for (var page in pdfPages) {
       pdf.addPage(page);
-    });
+    }
 
     String testFile = join(testDirectoryPath, "${Uuid().v1()}.pdf");
     final file = File(testFile);
@@ -51,5 +51,5 @@ bool get isIos => defaultTargetPlatform == TargetPlatform.iOS;
 
 /// A trick to wait till all awaits defined inside tester function get their
 /// results so the checks are finished. (avoiding awkward expectAsync calls)
-Future<void> forEach<T>(List<T> docs, Future<void> tester(T e)) =>
+Future<void> forEach<T>(List<T> docs, Future<void> Function(T e) tester) =>
     Future.wait(docs.map((e) => tester(e)));

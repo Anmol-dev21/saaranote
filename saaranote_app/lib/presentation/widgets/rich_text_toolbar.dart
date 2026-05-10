@@ -161,6 +161,17 @@ class _FontSizeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<double>(
       tooltip: 'Font Size',
+      itemBuilder: (context) => [
+        _buildFontSizeItem(12),
+        _buildFontSizeItem(14),
+        _buildFontSizeItem(16),
+        _buildFontSizeItem(18),
+        _buildFontSizeItem(20),
+        _buildFontSizeItem(24),
+        _buildFontSizeItem(28),
+        _buildFontSizeItem(32),
+      ],
+      onSelected: onSizeChanged,
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.xs,
@@ -189,17 +200,6 @@ class _FontSizeButton extends StatelessWidget {
           ],
         ),
       ),
-      itemBuilder: (context) => [
-        _buildFontSizeItem(12),
-        _buildFontSizeItem(14),
-        _buildFontSizeItem(16),
-        _buildFontSizeItem(18),
-        _buildFontSizeItem(20),
-        _buildFontSizeItem(24),
-        _buildFontSizeItem(28),
-        _buildFontSizeItem(32),
-      ],
-      onSelected: onSizeChanged,
     );
   }
 
@@ -229,6 +229,20 @@ class _ColorButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<Color?>(
       tooltip: tooltip,
+      itemBuilder: (context) => [
+        PopupMenuItem<Color?>(
+          value: null,
+          child: Row(
+            children: [
+              Icon(Icons.clear, size: 20),
+              SizedBox(width: AppSpacing.xs),
+              Text('None'),
+            ],
+          ),
+        ),
+        ..._buildColorItems(),
+      ],
+      onSelected: onColorChanged,
       child: Container(
         width: 40,
         height: 40,
@@ -256,20 +270,6 @@ class _ColorButton extends StatelessWidget {
           ],
         ),
       ),
-      itemBuilder: (context) => [
-        PopupMenuItem<Color?>(
-          value: null,
-          child: Row(
-            children: [
-              Icon(Icons.clear, size: 20),
-              SizedBox(width: AppSpacing.xs),
-              Text('None'),
-            ],
-          ),
-        ),
-        ..._buildColorItems(),
-      ],
-      onSelected: onColorChanged,
     );
   }
 

@@ -65,9 +65,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ],
             ),
-            floatingActionButton: tabController == null
-                ? null
-                : AnimatedBuilder(
+            floatingActionButton: AnimatedBuilder(
                     animation: tabController,
                     builder: (context, child) {
                       if (tabController.index != 1) {

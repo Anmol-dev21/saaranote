@@ -115,7 +115,7 @@ class CreateNoteFromTextUseCase {
       return Summarizer.generateDetailedSummary(content);
     }
 
-    final result = await _aiEngine!.generateSummary(text: content);
+    final result = await _aiEngine.generateSummary(text: content);
     final structuredText = SummaryFormatter.formatStructuredSummary(
       result.structured,
       includeSections: true,

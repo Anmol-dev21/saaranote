@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/rich_text_content.dart' as domain;

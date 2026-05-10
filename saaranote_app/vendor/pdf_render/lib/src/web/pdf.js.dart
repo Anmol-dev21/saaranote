@@ -1,5 +1,5 @@
 @JS()
-library pdf.js;
+library;
 
 import 'dart:js_util';
 import 'dart:typed_data';

@@ -38,12 +38,9 @@ class AppTheme {
         errorContainer: AppColors.errorLightBg,
         onErrorContainer: AppColors.errorLight,
         
-        background: AppColors.backgroundLight,
-        onBackground: AppColors.textPrimaryLight,
-        
         surface: AppColors.surfaceLight,
         onSurface: AppColors.textPrimaryLight,
-        surfaceVariant: AppColors.gray50Light,
+        surfaceContainerHighest: AppColors.gray50Light,
         onSurfaceVariant: AppColors.textSecondaryLight,
         
         outline: AppColors.gray300Light,
@@ -297,12 +294,9 @@ class AppTheme {
         errorContainer: AppColors.errorDarkBg,
         onErrorContainer: AppColors.errorDark,
         
-        background: AppColors.backgroundDark,
-        onBackground: AppColors.textPrimaryDark,
-        
         surface: AppColors.surfaceDark,
         onSurface: AppColors.textPrimaryDark,
-        surfaceVariant: AppColors.gray100Dark,
+        surfaceContainerHighest: AppColors.gray100Dark,
         onSurfaceVariant: AppColors.textSecondaryDark,
         
         outline: AppColors.gray400Dark,

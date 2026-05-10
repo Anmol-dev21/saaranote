@@ -13,13 +13,13 @@ class AppCard extends StatelessWidget {
   final bool showBorder;
 
   const AppCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
     this.onTap,
     this.color,
     this.showBorder = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,14 +56,14 @@ class AppListCard extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   const AppListCard({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     this.leading,
     this.trailing,
     this.onTap,
     this.onLongPress,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,12 +119,12 @@ class AppEmptyState extends StatelessWidget {
   final Widget? action;
 
   const AppEmptyState({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     this.message,
     this.action,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +179,7 @@ class AppEmptyState extends StatelessWidget {
 class AppLoadingIndicator extends StatelessWidget {
   final String? message;
 
-  const AppLoadingIndicator({Key? key, this.message}) : super(key: key);
+  const AppLoadingIndicator({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -207,10 +207,10 @@ class AppSectionHeader extends StatelessWidget {
   final Widget? action;
 
   const AppSectionHeader({
-    Key? key,
+    super.key,
     required this.title,
     this.action,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +223,7 @@ class AppSectionHeader extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          if (action != null) action!,
+          ?action,
         ],
       ),
     );
@@ -239,13 +239,13 @@ class AppChip extends StatelessWidget {
   final bool selected;
 
   const AppChip({
-    Key? key,
+    super.key,
     required this.label,
     this.onDeleted,
     this.onTap,
     this.backgroundColor,
     this.selected = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -277,12 +277,12 @@ class AppSearchBar extends StatelessWidget {
   final VoidCallback? onClear;
 
   const AppSearchBar({
-    Key? key,
+    super.key,
     this.controller,
     this.hintText,
     this.onChanged,
     this.onClear,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -315,13 +315,13 @@ class AppInfoBanner extends StatelessWidget {
   final VoidCallback? onDismiss;
 
   const AppInfoBanner({
-    Key? key,
+    super.key,
     required this.message,
     this.icon,
     this.backgroundColor,
     this.textColor,
     this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

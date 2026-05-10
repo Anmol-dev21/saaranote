@@ -4,7 +4,7 @@ import '../../domain/entities/rich_text_content.dart' as domain;
 class RichTextEditingController extends TextEditingController {
   List<domain.TextSpan> _spans = const [];
 
-  RichTextEditingController({String? text}) : super(text: text);
+  RichTextEditingController({super.text});
 
   void updateSpans(List<domain.TextSpan> spans) {
     if (identical(spans, _spans)) {

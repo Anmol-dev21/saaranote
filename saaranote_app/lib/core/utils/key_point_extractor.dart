@@ -200,7 +200,7 @@ class KeyPointExtractor {
             TextProcessor.countWords(definition) >= 3) {
           flashcards.add({
             'question': 'What is $concept?',
-            'answer': definition.replaceAll(RegExp(r'[.!?]$'), '') + '.',
+            'answer': '${definition.replaceAll(RegExp(r'[.!?]$'), '')}.',
           });
         }
       }

@@ -35,7 +35,7 @@ class NoteViewModel extends ChangeNotifier {
 
   // Search-specific state
   List<Note> _searchResults = [];
-  bool _isSearching = false;
+  final bool _isSearching = false;
   String? _searchError;
   String _currentSearchQuery = '';
 

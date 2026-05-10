@@ -8,7 +8,7 @@ import '../js_util.dart' as js_util;
 
 class PdfTexture extends StatefulWidget {
   final int textureId;
-  const PdfTexture({required this.textureId, Key? key}) : super(key: key);
+  const PdfTexture({required this.textureId, super.key});
   @override
   PdfTextureState createState() => PdfTextureState();
 

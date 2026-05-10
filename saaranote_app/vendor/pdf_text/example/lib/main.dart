@@ -8,6 +8,8 @@ import 'package:pdf_text/pdf_text.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -36,36 +38,37 @@ class _MyAppState extends State<MyApp> {
             child: ListView(
               children: <Widget>[
                 TextButton(
-                  child: Text(
-                    "Pick PDF document",
-                    style: TextStyle(color: Colors.white),
-                  ),
                   style: TextButton.styleFrom(
                       padding: EdgeInsets.all(5),
                       backgroundColor: Colors.blueAccent),
                   onPressed: _pickPDFText,
-                ),
-                TextButton(
                   child: Text(
-                    "Read random page",
+                    "Pick PDF document",
                     style: TextStyle(color: Colors.white),
                   ),
+                ),
+                TextButton(
                   style: TextButton.styleFrom(
                       padding: EdgeInsets.all(5),
                       backgroundColor: Colors.blueAccent),
                   onPressed: _buttonsEnabled ? _readRandomPage : () {},
-                ),
-                TextButton(
                   child: Text(
-                    "Read whole document",
+                    "Read random page",
                     style: TextStyle(color: Colors.white),
                   ),
+                ),
+                TextButton(
                   style: TextButton.styleFrom(
                       padding: EdgeInsets.all(5),
                       backgroundColor: Colors.blueAccent),
                   onPressed: _buttonsEnabled ? _readWholeDoc : () {},
+                  child: Text(
+                    "Read whole document",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
                 Padding(
+                  padding: EdgeInsets.all(15),
                   child: Text(
                     _pdfDoc == null
                         ? "Pick a new PDF document and wait for it to load..."
@@ -73,15 +76,14 @@ class _MyAppState extends State<MyApp> {
                     style: TextStyle(fontSize: 18),
                     textAlign: TextAlign.center,
                   ),
-                  padding: EdgeInsets.all(15),
                 ),
                 Padding(
+                  padding: EdgeInsets.all(15),
                   child: Text(
                     _text == "" ? "" : "Text:",
                     style: TextStyle(fontSize: 18),
                     textAlign: TextAlign.center,
                   ),
-                  padding: EdgeInsets.all(15),
                 ),
                 Text(_text),
               ],

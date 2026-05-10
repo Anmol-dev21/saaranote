@@ -173,6 +173,8 @@ class _ColorPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<Color>(
       tooltip: 'Pen Color',
+      itemBuilder: (context) => _buildColorItems(),
+      onSelected: onColorChanged,
       child: Container(
         width: 40,
         height: 40,
@@ -185,8 +187,6 @@ class _ColorPicker extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      itemBuilder: (context) => _buildColorItems(),
-      onSelected: onColorChanged,
     );
   }
 

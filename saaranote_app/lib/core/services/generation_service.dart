@@ -139,7 +139,7 @@ class GenerationService {
 
   Future<String> _buildStructuredSummary(String text) async {
     if (_aiEngine == null) return '';
-    final result = await _aiEngine!.generateSummary(text: text);
+    final result = await _aiEngine.generateSummary(text: text);
     return SummaryFormatter.formatStructuredSummary(
       result.structured,
       includeSections: true,

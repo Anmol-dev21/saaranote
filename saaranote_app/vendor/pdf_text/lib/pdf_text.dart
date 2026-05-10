@@ -6,7 +6,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf_text/client_provider.dart';
 
-const MethodChannel _CHANNEL = const MethodChannel('pdf_text');
+const MethodChannel _CHANNEL = MethodChannel('pdf_text');
 const String _TEMP_DIR_NAME = ".flutter_pdf_text";
 
 /// Class representing a PDF document.
@@ -54,7 +54,7 @@ class PDFDoc {
       String tempDirPath = (await getTemporaryDirectory()).path;
 
       String filePath = join(tempDirPath, _TEMP_DIR_NAME,
-          url.split("/").last.split(".").first + ".pdf");
+          "${url.split("/").last.split(".").first}.pdf");
 
       file = File(filePath);
       file.createSync(recursive: true);
@@ -87,11 +87,11 @@ class PDFDoc {
     // Collecting missing pages
 
     List<int> missingPagesNumbers = [];
-    _pages.forEach((page) {
+    for (var page in _pages) {
       if (page._text == null) {
         missingPagesNumbers.add(page.number);
       }
-    });
+    }
 
     late List<String> missingPagesTexts;
     // Reading missing pages, if any exists

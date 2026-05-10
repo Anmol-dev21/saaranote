@@ -38,7 +38,7 @@ class AskQuestionUseCase {
 
     try {
       final response = _offlineQaService != null
-          ? await _offlineQaService!.answer(query: params.question)
+          ? await _offlineQaService.answer(query: params.question)
           : await _generateWithLegacyPipeline(params.question);
 
       final assistantMessage = await _chatRepository.addMessage(
