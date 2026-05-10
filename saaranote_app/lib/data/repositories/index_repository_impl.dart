@@ -70,42 +70,93 @@ class IndexRepositoryImpl implements IndexRepository {
   Future<List<RetrievalResult>> keywordSearch(String query, int limit) async {
     final db = await _databaseHelper.database;
 
-    // Use SQLite FTS5 with BM25 ranking
-    final results = await db.rawQuery('''
-      SELECT 
-        dc.id,
-        dc.file_metadata_id,
-        dc.chunk_index,
-        dc.content,
-        dc.token_count,
-        dc.created_at,
-        bm25(document_chunks_fts) as score
-      FROM document_chunks_fts
-      JOIN document_chunks dc ON document_chunks_fts.rowid = dc.id
-      WHERE document_chunks_fts MATCH ?
-      ORDER BY score DESC
-      LIMIT ?
-    ''', [query, limit]);
+    final isFts5 = await _databaseHelper.isDocumentChunksFts5();
 
-    return results.map((row) {
-      final chunk = DocumentChunk(
-        id: row['id'] as int,
-        fileMetadataId: row['file_metadata_id'] as int,
-        chunkIndex: row['chunk_index'] as int,
-        content: row['content'] as String,
-        tokenCount: row['token_count'] as int,
-        createdAt: DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int),
+    try {
+      if (isFts5) {
+        final results = await db.rawQuery(
+          '''
+          SELECT
+            dc.id,
+            dc.file_metadata_id,
+            dc.chunk_index,
+            dc.content,
+            dc.token_count,
+            dc.created_at,
+            bm25(document_chunks_fts) as score
+          FROM document_chunks_fts
+          JOIN document_chunks dc ON document_chunks_fts.rowid = dc.id
+          WHERE document_chunks_fts MATCH ?
+          ORDER BY score DESC
+          LIMIT ?
+        ''',
+          [query, limit],
+        );
+
+        return results.map((row) {
+          final chunk = DocumentChunk(
+            id: row['id'] as int,
+            fileMetadataId: row['file_metadata_id'] as int,
+            chunkIndex: row['chunk_index'] as int,
+            content: row['content'] as String,
+            tokenCount: row['token_count'] as int,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              row['created_at'] as int,
+            ),
+          );
+
+          // BM25 scores are negative, take absolute value for relevance
+          final score = (row['score'] as num).toDouble().abs();
+
+          return RetrievalResult(
+            chunk: chunk,
+            score: score,
+            method: RetrievalMethod.keyword,
+          );
+        }).toList();
+      }
+
+      // FTS4 fallback: no bm25(); return matches with a basic stable ordering.
+      final results = await db.rawQuery(
+        '''
+        SELECT
+          dc.id,
+          dc.file_metadata_id,
+          dc.chunk_index,
+          dc.content,
+          dc.token_count,
+          dc.created_at
+        FROM document_chunks_fts
+        JOIN document_chunks dc ON document_chunks_fts.rowid = dc.id
+        WHERE document_chunks_fts MATCH ?
+        ORDER BY dc.created_at DESC
+        LIMIT ?
+      ''',
+        [query, limit],
       );
 
-      // BM25 scores are negative, take absolute value for relevance
-      final score = (row['score'] as num).toDouble().abs();
+      return results.map((row) {
+        final chunk = DocumentChunk(
+          id: row['id'] as int,
+          fileMetadataId: row['file_metadata_id'] as int,
+          chunkIndex: row['chunk_index'] as int,
+          content: row['content'] as String,
+          tokenCount: row['token_count'] as int,
+          createdAt: DateTime.fromMillisecondsSinceEpoch(
+            row['created_at'] as int,
+          ),
+        );
 
-      return RetrievalResult(
-        chunk: chunk,
-        score: score,
-        method: RetrievalMethod.keyword,
-      );
-    }).toList();
+        return RetrievalResult(
+          chunk: chunk,
+          score: 1.0,
+          method: RetrievalMethod.keyword,
+        );
+      }).toList();
+    } catch (_) {
+      // If FTS isn't available for some reason, fail gracefully.
+      return [];
+    }
   }
 
   @override
@@ -128,9 +179,6 @@ class IndexRepositoryImpl implements IndexRepository {
       chunksByFile[row['file_metadata_id'] as int] = row['count'] as int;
     }
 
-    return {
-      'totalChunks': totalChunks,
-      'chunksByFile': chunksByFile,
-    };
+    return {'totalChunks': totalChunks, 'chunksByFile': chunksByFile};
   }
 }

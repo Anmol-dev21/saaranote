@@ -9,6 +9,7 @@
 /// - Empty state handling
 /// - Review session management
 /// - Edge cases (empty lists, boundary navigation)
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/domain/entities/flashcard.dart';
@@ -381,8 +382,8 @@ void main() {
       });
 
       test('5.5 Long question and answer handling', () {
-        final longQuestion = 'What is ' + 'the meaning of life ' * 20;
-        final longAnswer = 'The answer is ' + '42 ' * 50;
+        final longQuestion = 'What is ${'the meaning of life ' * 20}';
+        final longAnswer = 'The answer is ${'42 ' * 50}';
 
         final flashcard = createTestFlashcard(
           noteId: 1,

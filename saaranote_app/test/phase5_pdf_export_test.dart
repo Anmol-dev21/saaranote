@@ -10,6 +10,7 @@
 /// - Empty state handling
 /// - Edge cases (special characters, long content)
 /// - Performance considerations
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/domain/entities/note.dart';

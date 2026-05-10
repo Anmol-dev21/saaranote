@@ -137,7 +137,7 @@ class _DrawingPainter extends CustomPainter {
     final baseColor = Color(0xFF000000 | colorValue);
 
     // Apply opacity
-    paint.color = baseColor.withOpacity(stroke.style.opacity);
+    paint.color = baseColor.withValues(alpha: stroke.style.opacity);
 
     // Apply stroke type specific styles
     switch (stroke.style.type) {
@@ -147,7 +147,7 @@ class _DrawingPainter extends CustomPainter {
       case StrokeType.highlighter:
         // Highlighter with lower opacity and wider stroke
         paint.strokeWidth = stroke.style.width * 1.5;
-        paint.color = paint.color.withOpacity(0.4);
+        paint.color = paint.color.withValues(alpha: 0.4);
         break;
       case StrokeType.eraser:
         // Eraser uses white color with blend mode

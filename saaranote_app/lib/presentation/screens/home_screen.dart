@@ -201,12 +201,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         );
-        
-        if (value == 'delete' && context.mounted) {
+
+        if (!context.mounted) return;
+
+        if (value == 'delete') {
           final confirm = await _showDeleteConfirmation(context);
-          if (confirm == true && context.mounted) {
+          if (!context.mounted) return;
+          if (confirm == true) {
             final success = await viewModel.deleteNote(noteId);
-            if (success && context.mounted) {
+            if (!context.mounted) return;
+            if (success) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('Note deleted'),
@@ -246,6 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => const AddNoteScreen()),
     ).then((created) {
+      if (!context.mounted) return;
       if (created == true) {
         context.read<NoteViewModel>().refresh();
       }
@@ -257,6 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => const NoteEditorScreen()),
     ).then((_) {
+      if (!context.mounted) return;
       context.read<NoteViewModel>().refresh();
     });
   }

@@ -6,6 +6,7 @@ class SummaryModel extends NoteSummary {
     required super.noteId,
     required super.summaryText,
     required super.createdAt,
+    super.generationState,
   });
 
   /// Create SummaryModel from domain entity
@@ -15,6 +16,7 @@ class SummaryModel extends NoteSummary {
       noteId: summary.noteId,
       summaryText: summary.summaryText,
       createdAt: summary.createdAt,
+      generationState: summary.generationState,
     );
   }
 
@@ -45,6 +47,7 @@ class SummaryModel extends NoteSummary {
       noteId: noteId,
       summaryText: summaryText,
       createdAt: createdAt,
+      generationState: generationState,
     );
   }
 
@@ -54,12 +57,14 @@ class SummaryModel extends NoteSummary {
     int? noteId,
     String? summaryText,
     DateTime? createdAt,
+    String? generationState,
   }) {
     return SummaryModel(
       id: id ?? this.id,
       noteId: noteId ?? this.noteId,
       summaryText: summaryText ?? this.summaryText,
       createdAt: createdAt ?? this.createdAt,
+      generationState: generationState ?? this.generationState,
     );
   }
 }

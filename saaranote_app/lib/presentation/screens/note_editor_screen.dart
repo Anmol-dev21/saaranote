@@ -175,7 +175,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         decoration: InputDecoration(
           hintText: 'Note Title',
           hintStyle: AppTypography.h3().copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           border: InputBorder.none,
         ),
@@ -215,7 +215,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         decoration: InputDecoration(
           hintText: 'Start typing or tap formatting buttons below...',
           hintStyle: AppTypography.noteContent().copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           border: InputBorder.none,
         ),

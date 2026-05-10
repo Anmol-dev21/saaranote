@@ -127,7 +127,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Container(
                   width: double.infinity,
                   padding: AppSpacing.pagePadding,
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   child: ScopeChip(
                     label: viewModel.scopedFolderName ?? 'Selected Notes',
                     onClear: viewModel.clearScope,
@@ -165,7 +165,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Container(
                   width: double.infinity,
                   padding: AppSpacing.paddingMd,
-                  color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                   child: Row(
                     children: [
                       Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),

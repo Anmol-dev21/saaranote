@@ -80,17 +80,28 @@ class CreateNoteFromPdfUseCase {
     if (params.generateSummary) {
       try {
         final summaryText = Summarizer.generateDetailedSummary(cleanedContent);
-        final finalSummary = params.useAiEnhancement
-          ? await _hybridSummaryService.generateFinalSummary(summaryText)
-          : summaryText;
-
-        if (finalSummary.isNotEmpty) {
-          final summary = NoteSummary(
-            noteId: noteId,
-            summaryText: finalSummary,
-            createdAt: now,
-          );
-          createdSummary = await _summaryRepository.create(summary);
+        if (params.useAiEnhancement) {
+          final result = await _hybridSummaryService.generateFinalSummaryResult(summaryText);
+          final finalSummary = result.summary;
+          if (finalSummary.isNotEmpty) {
+            final summary = NoteSummary(
+              noteId: noteId,
+              summaryText: finalSummary,
+              createdAt: now,
+              generationState: result.state.name,
+            );
+            createdSummary = await _summaryRepository.create(summary);
+          }
+        } else {
+          if (summaryText.isNotEmpty) {
+            final summary = NoteSummary(
+              noteId: noteId,
+              summaryText: summaryText,
+              createdAt: now,
+              generationState: 'aiDisabled',
+            );
+            createdSummary = await _summaryRepository.create(summary);
+          }
         }
       } catch (e) {
         // Continue even if summary generation fails

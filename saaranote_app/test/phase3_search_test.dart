@@ -8,6 +8,7 @@
 /// - Clear search functionality
 /// - Sort ordering (recent/oldest)
 /// - Filter states (all/active/archived)
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/domain/entities/note.dart';
@@ -330,7 +331,7 @@ void main() {
 
         expect(results.length, greaterThan(0));
         expect(sw.elapsedMilliseconds, lessThan(100)); // Should be fast in-memory
-        print('   Searched 1000 notes in ${sw.elapsedMilliseconds}ms');
+        // Debug print removed to satisfy avoid_print lint.
       });
 
       test('5.2 Query trimming', () {

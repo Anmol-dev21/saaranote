@@ -195,6 +195,14 @@ ollama run phi3
 
 The app connects to `http://localhost:11434`.
 
+On Android emulators, `localhost` refers to the emulator itself. When running on Android and configured with `localhost`, the app automatically tries emulator host aliases (`10.0.2.2` / `10.0.3.2`).
+
+You can override the Ollama endpoint/model at run/build time:
+
+```bash
+flutter run --dart-define=OLLAMA_BASE_URL=http://10.0.2.2:11434 --dart-define=OLLAMA_MODEL=phi3
+```
+
 ### Summary Output Format
 
 When AI enhancement is enabled, summaries are formatted as:

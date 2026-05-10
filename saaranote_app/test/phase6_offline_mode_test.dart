@@ -9,6 +9,7 @@
 /// - No HTTP/API calls
 /// - Local file system operations
 /// - SQLite database operations
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/domain/entities/note.dart';
@@ -143,7 +144,7 @@ void main() {
         
         // Local extractive summarization (no GPT/API)
         final sentences = content.split('.').where((s) => s.trim().isNotEmpty).toList();
-        final summary = sentences.take(2).join('. ') + '.';
+        final summary = '${sentences.take(2).join('. ')}.';
 
         expect(summary, isNotEmpty);
         expect(summary.contains('First'), isTrue);

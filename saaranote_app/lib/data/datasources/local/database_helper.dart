@@ -6,6 +6,8 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
 
+  static const String _chunksFtsTable = 'document_chunks_fts';
+
   DatabaseHelper._init();
 
   Future<Database> get database async {
@@ -75,10 +77,14 @@ class DatabaseHelper {
 
     // Create indexes for better query performance
     await db.execute(
-        'CREATE INDEX idx_notes_created_at ON notes(created_at DESC)');
-    await db.execute('CREATE INDEX idx_summaries_note_id ON summaries(note_id)');
+      'CREATE INDEX idx_notes_created_at ON notes(created_at DESC)',
+    );
     await db.execute(
-        'CREATE INDEX idx_flashcards_note_id ON flashcards(note_id)');
+      'CREATE INDEX idx_summaries_note_id ON summaries(note_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_flashcards_note_id ON flashcards(note_id)',
+    );
 
     // File metadata table (for file organization system)
     if (version >= 3) {
@@ -113,11 +119,21 @@ class DatabaseHelper {
       ''');
 
       // Create indexes for file organization
-      await db.execute('CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)');
-      await db.execute('CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)');
-      await db.execute('CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)');
-      await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
-      await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)',
+      );
     }
 
     // AI Chat system tables (version 4+)
@@ -135,34 +151,27 @@ class DatabaseHelper {
         )
       ''');
 
-      // FTS5 virtual table for full-text search
-      await db.execute('''
-        CREATE VIRTUAL TABLE document_chunks_fts USING fts5(
-          content,
-          content='document_chunks',
-          content_rowid='id',
-          tokenize='porter unicode61'
-        )
-      ''');
+      final ftsCreated = await _createDocumentChunksFts(db);
+      if (ftsCreated) {
+        // Triggers to keep FTS in sync
+        await db.execute('''
+          CREATE TRIGGER chunks_fts_insert AFTER INSERT ON document_chunks BEGIN
+            INSERT INTO $_chunksFtsTable(rowid, content) VALUES (new.id, new.content);
+          END
+        ''');
 
-      // Triggers to keep FTS5 in sync
-      await db.execute('''
-        CREATE TRIGGER chunks_fts_insert AFTER INSERT ON document_chunks BEGIN
-          INSERT INTO document_chunks_fts(rowid, content) VALUES (new.id, new.content);
-        END
-      ''');
+        await db.execute('''
+          CREATE TRIGGER chunks_fts_delete AFTER DELETE ON document_chunks BEGIN
+            DELETE FROM $_chunksFtsTable WHERE rowid = old.id;
+          END
+        ''');
 
-      await db.execute('''
-        CREATE TRIGGER chunks_fts_delete AFTER DELETE ON document_chunks BEGIN
-          DELETE FROM document_chunks_fts WHERE rowid = old.id;
-        END
-      ''');
-
-      await db.execute('''
-        CREATE TRIGGER chunks_fts_update AFTER UPDATE ON document_chunks BEGIN
-          UPDATE document_chunks_fts SET content = new.content WHERE rowid = new.id;
-        END
-      ''');
+        await db.execute('''
+          CREATE TRIGGER chunks_fts_update AFTER UPDATE ON document_chunks BEGIN
+            UPDATE $_chunksFtsTable SET content = new.content WHERE rowid = new.id;
+          END
+        ''');
+      }
 
       // Chat sessions
       await db.execute('''
@@ -203,24 +212,34 @@ class DatabaseHelper {
       ''');
 
       // Create indexes for AI chat
-      await db.execute('CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)');
-      await db.execute('CREATE INDEX idx_messages_session ON chat_messages(session_id)');
-      await db.execute('CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)');
-      await db.execute('CREATE INDEX idx_sources_message ON message_sources(message_id)');
+      await db.execute(
+        'CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_messages_session ON chat_messages(session_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_sources_message ON message_sources(message_id)',
+      );
     }
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     // Handle database migrations here when version changes
-    
+
     // Version 1 -> 2: Add advanced note content support (rich text, drawings)
     if (oldVersion < 2) {
       // Add new columns for rich content support
       // All columns are nullable to maintain backward compatibility
       await db.execute('ALTER TABLE notes ADD COLUMN rich_content TEXT');
       await db.execute('ALTER TABLE notes ADD COLUMN drawing_ids TEXT');
-      await db.execute("ALTER TABLE notes ADD COLUMN content_type TEXT DEFAULT 'plain'");
-      
+      await db.execute(
+        "ALTER TABLE notes ADD COLUMN content_type TEXT DEFAULT 'plain'",
+      );
+
       // Create drawings table for storing drawing stroke data
       await db.execute('''
         CREATE TABLE IF NOT EXISTS drawings (
@@ -232,9 +251,11 @@ class DatabaseHelper {
           FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
         )
       ''');
-      
+
       // Create index for drawing lookups
-      await db.execute('CREATE INDEX idx_drawings_note_id ON drawings(note_id)');
+      await db.execute(
+        'CREATE INDEX idx_drawings_note_id ON drawings(note_id)',
+      );
     }
 
     // Version 2 -> 3: Add file organization system
@@ -276,11 +297,21 @@ class DatabaseHelper {
       ''');
 
       // Create indexes for file organization queries
-      await db.execute('CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)');
-      await db.execute('CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)');
-      await db.execute('CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)');
-      await db.execute('CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)');
-      await db.execute('CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)');
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_subject ON file_metadata(subject)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_type ON file_metadata(file_type)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_status ON file_metadata(organization_status)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_file_metadata_created ON file_metadata(created_at DESC)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_organization_rules_priority ON organization_rules(priority DESC)',
+      );
     }
 
     // Version 3 -> 4: Add AI chat system
@@ -303,34 +334,27 @@ class DatabaseHelper {
         )
       ''');
 
-      // FTS5 virtual table for full-text search
-      await db.execute('''
-        CREATE VIRTUAL TABLE document_chunks_fts USING fts5(
-          content,
-          content='document_chunks',
-          content_rowid='id',
-          tokenize='porter unicode61'
-        )
-      ''');
+      final ftsCreated = await _createDocumentChunksFts(db);
+      if (ftsCreated) {
+        // Triggers to keep FTS in sync
+        await db.execute('''
+          CREATE TRIGGER chunks_fts_insert AFTER INSERT ON document_chunks BEGIN
+            INSERT INTO $_chunksFtsTable(rowid, content) VALUES (new.id, new.content);
+          END
+        ''');
 
-      // Triggers to keep FTS5 in sync
-      await db.execute('''
-        CREATE TRIGGER chunks_fts_insert AFTER INSERT ON document_chunks BEGIN
-          INSERT INTO document_chunks_fts(rowid, content) VALUES (new.id, new.content);
-        END
-      ''');
+        await db.execute('''
+          CREATE TRIGGER chunks_fts_delete AFTER DELETE ON document_chunks BEGIN
+            DELETE FROM $_chunksFtsTable WHERE rowid = old.id;
+          END
+        ''');
 
-      await db.execute('''
-        CREATE TRIGGER chunks_fts_delete AFTER DELETE ON document_chunks BEGIN
-          DELETE FROM document_chunks_fts WHERE rowid = old.id;
-        END
-      ''');
-
-      await db.execute('''
-        CREATE TRIGGER chunks_fts_update AFTER UPDATE ON document_chunks BEGIN
-          UPDATE document_chunks_fts SET content = new.content WHERE rowid = new.id;
-        END
-      ''');
+        await db.execute('''
+          CREATE TRIGGER chunks_fts_update AFTER UPDATE ON document_chunks BEGIN
+            UPDATE $_chunksFtsTable SET content = new.content WHERE rowid = new.id;
+          END
+        ''');
+      }
 
       // Chat sessions
       await db.execute('''
@@ -371,15 +395,76 @@ class DatabaseHelper {
       ''');
 
       // Create indexes for AI chat
-      await db.execute('CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)');
-      await db.execute('CREATE INDEX idx_messages_session ON chat_messages(session_id)');
-      await db.execute('CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)');
-      await db.execute('CREATE INDEX idx_sources_message ON message_sources(message_id)');
+      await db.execute(
+        'CREATE INDEX idx_chunks_file ON document_chunks(file_metadata_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_messages_session ON chat_messages(session_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_messages_timestamp ON chat_messages(timestamp DESC)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_sources_message ON message_sources(message_id)',
+      );
     }
   }
 
   Future<void> close() async {
     final db = await instance.database;
     await db.close();
+  }
+
+  /// Creates the document chunk full-text search virtual table.
+  ///
+  /// Some Android devices do not ship SQLite with the `fts5` module enabled.
+  /// In that case we fall back to `fts4` to avoid failing database open.
+  Future<bool> _createDocumentChunksFts(Database db) async {
+    try {
+      await db.execute('''
+        CREATE VIRTUAL TABLE $_chunksFtsTable USING fts5(
+          content,
+          content='document_chunks',
+          content_rowid='id',
+          tokenize='porter unicode61'
+        )
+      ''');
+      return true;
+    } catch (e) {
+      final message = e.toString().toLowerCase();
+      final isFts5Missing =
+          message.contains('no such module') && message.contains('fts5');
+      if (!isFts5Missing) {
+        // If it's some other error, try fts4 anyway but don't crash the app.
+      }
+    }
+
+    try {
+      await db.execute('''
+        CREATE VIRTUAL TABLE $_chunksFtsTable USING fts4(
+          content,
+          content='document_chunks',
+          content_rowid='id',
+          tokenize=porter
+        )
+      ''');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> isDocumentChunksFts5() async {
+    final db = await database;
+    try {
+      final result = await db.rawQuery(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=? LIMIT 1",
+        [_chunksFtsTable],
+      );
+      final sql = result.isNotEmpty ? (result.first['sql'] as String?) : null;
+      return (sql ?? '').toLowerCase().contains('fts5');
+    } catch (_) {
+      return false;
+    }
   }
 }

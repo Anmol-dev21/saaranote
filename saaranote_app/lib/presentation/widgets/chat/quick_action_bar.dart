@@ -81,12 +81,12 @@ class _QuickActionChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isEnabled
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
-              : Theme.of(context).cardColor.withOpacity(0.5),
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+              : Theme.of(context).cardColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isEnabled
-                ? Theme.of(context).primaryColor.withOpacity(0.3)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.3)
                 : Theme.of(context).dividerColor,
             width: 1,
           ),

@@ -8,6 +8,7 @@
 /// - Flashcard generation  
 /// - Database operations
 /// - Data persistence
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saaranote_app/core/utils/text_processor.dart';
@@ -22,8 +23,9 @@ void main() {
       test('1.1 cleanText removes extra whitespace', () {
         final input = '  Hello   world  \n\n\n  Test  ';
         final result = TextProcessor.cleanText(input);
-        // cleanText normalizes ALL whitespace to single spaces
-        expect(result, 'Hello world Test');
+        // cleanText preserves paragraph breaks (multiple newlines)
+        // but normalizes horizontal whitespace
+        expect(result, 'Hello world\n\nTest');
         expect(result, isNot(contains('  '))); // No double spaces
       });
 
@@ -225,11 +227,7 @@ void main() {
         expect(note, isNotNull);
         expect(note.content, cleanedText);
         
-        print('✅ Full pipeline test passed');
-        print('   - Cleaned text: ${cleanedText.length} chars');
-        print('   - Summary: ${summary.length} chars');
-        print('   - Key points: ${keyPoints.length}');
-        print('   - Flashcards: ${flashcards.length}');
+        // Debug prints removed to satisfy avoid_print lint.
       });
 
       test('6.2 Handles minimal content', () {

@@ -22,7 +22,7 @@ class ScopeChip extends StatelessWidget {
           label: Text(label),
           onDeleted: onClear,
           deleteIcon: const Icon(Icons.close, size: 18),
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
           labelStyle: TextStyle(color: Theme.of(context).primaryColor),
         ),
       ],

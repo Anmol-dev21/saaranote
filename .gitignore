@@ -34,6 +34,7 @@ analysis_benchmark.json
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/
+.flutter/
 .flutter-plugins
 .flutter-plugins-dependencies
 **/generated_plugin_registrant.dart
@@ -46,10 +47,14 @@ linked_*.ds
 unlinked.ds
 unlinked_spec.ds
 
+# Local SDKs/toolchains
+android-sdk/
+.android/
+
 # Android related
 **/android/**/gradle-wrapper.jar
 .gradle/
-**/android/.cxx/
+android/.gradle/
 **/android/captures/
 **/android/gradlew
 **/android/gradlew.bat
@@ -57,6 +62,9 @@ unlinked_spec.ds
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 *.jks
+*.keystore
+*.apk
+*.aab
 
 # iOS/XCode related
 **/ios/**/*.mode1v3

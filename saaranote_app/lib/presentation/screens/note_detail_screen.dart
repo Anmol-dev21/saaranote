@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/note_detail_viewmodel.dart';
 import '../utils/summary_parser.dart';
+import '../../core/services/summary_state_labels.dart';
+import '../../core/services/summary_generation_state.dart';
 
 /// Screen displaying note details with summaries and flashcards
 class NoteDetailScreen extends StatefulWidget {
@@ -172,7 +174,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: viewModel.summaries.map((summary) {
-                          return _buildSummaryCard(summary.summaryText);
+                          return _buildSummaryCard(summary.summaryText, summary.generationState);
                         }).toList(),
                       ),
                     ),
@@ -259,7 +261,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     await viewModel.exportNoteAsPdf();
     
     // Show success or error message
-    if (!mounted) return;
+    if (!context.mounted) return;
     
     if (viewModel.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -323,21 +325,30 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-  Widget _buildSummaryCard(String summaryText) {
+  Widget _buildSummaryCard(String summaryText, String? generationStateStr) {
     final parsed = SummaryParser.parse(summaryText);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    // Parse the stored generation state string back to enum
+    final state = SummaryStateLabels.fromString(generationStateStr);
+    final isAiEnhanced = state == SummaryGenerationState.aiEnhanced;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue[200]!),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (parsed.isValid) _buildAiEnhancedLabel() else _buildFallbackBanner(),
+          if (isAiEnhanced && parsed.isValid)
+            _buildAiEnhancedLabel(state!)
+          else
+            _buildFallbackBanner(state),
           const SizedBox(height: 8),
           if (parsed.isValid)
             _buildStructuredSummary(parsed)
@@ -354,54 +365,61 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-  Widget _buildAiEnhancedLabel() {
+  Widget _buildAiEnhancedLabel(SummaryGenerationState state) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.green[50],
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.green[200]!),
+          border: Border.all(color: colorScheme.secondary),
         ),
-        child: const Text(
-          'AI Enhanced',
-          style: TextStyle(
+        child: Text(
+          SummaryStateLabels.title(state),
+          style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.green,
+            color: colorScheme.onSecondaryContainer,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFallbackBanner() {
+  Widget _buildFallbackBanner(SummaryGenerationState? state) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final displayState = state ?? SummaryGenerationState.fallback;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.orange[200]!),
+        border: Border.all(color: theme.dividerColor),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Basic summary used (AI unavailable)',
-            style: TextStyle(
+            SummaryStateLabels.title(displayState),
+            style: theme.textTheme.labelLarge?.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.orange,
+              color: colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 2),
           Text(
-            'Something went wrong. Showing basic summary.',
-            style: TextStyle(
+            SummaryStateLabels.subtitle(displayState),
+            style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 11,
-              color: Colors.orange,
+              color: colorScheme.onSurface,
             ),
           ),
         ],

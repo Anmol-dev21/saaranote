@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 
 import 'llm_service.dart';
+import 'summary_generation_state.dart';
+import 'summary_result.dart';
 import '../utils/llm_prompt_builder.dart';
 
 /// Hybrid summary enhancer that rewrites rule-based summaries via a local LLM.
@@ -10,35 +12,51 @@ class HybridSummaryService {
 
   HybridSummaryService({LlmService? llmService})
       : _llmService = llmService ?? LlmService();
-
   final LlmService _llmService;
-  final Map<String, String> _summaryCache = <String, String>{};
+  final Map<String, SummaryResult> _summaryCache = <String, SummaryResult>{};
 
   /// Generate the final summary using a hybrid flow.
   /// Falls back to the structured summary when the LLM output is unusable.
   Future<String> generateFinalSummary(String structuredSummary) async {
+    final res = await generateFinalSummaryResult(structuredSummary);
+    return res.summary;
+  }
+
+  /// New API: returns a structured result with state for accurate UI mapping.
+  Future<SummaryResult> generateFinalSummaryResult(String structuredSummary) async {
     final trimmed = structuredSummary.trim();
-    if (trimmed.isEmpty) return '';
+    if (trimmed.isEmpty) return const SummaryResult(summary: '', state: SummaryGenerationState.fallback);
 
     final safeInput = _truncateInput(trimmed);
     final cached = _summaryCache[safeInput];
     if (cached != null) {
       return cached;
     }
+
     developer.log('🧠 Hybrid AI started', name: 'HybridSummaryService');
     developer.log('Input length: ${safeInput.length}', name: 'HybridSummaryService');
+
     final rewritten = await rewriteSummary(safeInput);
+
+    // If LLM returned empty string, consider service unavailable for now
+    if (rewritten.trim().isEmpty) {
+      developer.log('⚠️ LLM returned empty response; using fallback.', name: 'HybridSummaryService');
+      final fallback = SummaryResult(summary: trimmed, state: SummaryGenerationState.llmUnavailable);
+      _storeCache(safeInput, fallback);
+      return fallback;
+    }
+
     if (!_isValidLlmSummary(rewritten)) {
-      developer.log('⚠️ LLM fallback used (invalid or empty response).',
-          name: 'HybridSummaryService');
-      final fallback = trimmed;
+      developer.log('⚠️ LLM returned invalid format; using fallback.', name: 'HybridSummaryService');
+      final fallback = SummaryResult(summary: trimmed, state: SummaryGenerationState.invalidFormat);
       _storeCache(safeInput, fallback);
       return fallback;
     }
 
     developer.log('LLM summary accepted.', name: 'HybridSummaryService');
-    _storeCache(safeInput, rewritten);
-    return rewritten;
+    final accepted = SummaryResult(summary: rewritten, state: SummaryGenerationState.aiEnhanced);
+    _storeCache(safeInput, accepted);
+    return accepted;
   }
 
   /// Rewrite a structured summary using the local model.
@@ -74,8 +92,8 @@ class HybridSummaryService {
     return input.substring(0, _maxInputChars).trimRight();
   }
 
-  void _storeCache(String key, String value) {
-    if (value.isEmpty) return;
+  void _storeCache(String key, SummaryResult value) {
+    if (value.summary.isEmpty) return;
     if (_summaryCache.length >= _maxCacheEntries) {
       _summaryCache.remove(_summaryCache.keys.first);
     }
