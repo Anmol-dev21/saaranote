@@ -237,6 +237,21 @@ class ChatViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Initialize the chat (convenience method for initializeSession)
+  Future<void> initialize({int? sessionId}) async {
+    await initializeSession(sessionId: sessionId);
+  }
+
+  /// Send a message (convenience method for sendQuestion)
+  Future<void> sendMessage(String message) async {
+    await sendQuestion(message);
+  }
+
+  /// Create a new chat session
+  Future<void> createNewSession() async {
+    await initializeSession(sessionId: null);
+  }
 }
 
 /// Quick action types for one-tap commands

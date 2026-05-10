@@ -184,7 +184,7 @@ class SettingsScreen extends StatelessWidget {
             height: 52,
             width: 52,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.12),
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -237,7 +237,7 @@ class SettingsScreen extends StatelessWidget {
           if (index.isOdd) {
             return Divider(
               height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.4),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
             );
           }
           return tiles[index ~/ 2];
@@ -453,7 +453,6 @@ class SettingsScreen extends StatelessWidget {
       case ThemeMode.dark:
         return 'Dark';
       case ThemeMode.system:
-      default:
         return 'System';
     }
   }

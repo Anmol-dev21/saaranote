@@ -144,6 +144,9 @@ class CreateNoteFromTextParams {
   final bool generateSummary;
   final bool useAiEnhancement;
   final bool generateFlashcards;
+  final dynamic richContent; // RichTextContent from domain layer 
+  final List<String>? drawingIds;
+  final dynamic contentType; // ContentType enum
 
   CreateNoteFromTextParams({
     required this.title,
@@ -152,6 +155,9 @@ class CreateNoteFromTextParams {
     this.generateSummary = true,
     this.useAiEnhancement = true,
     this.generateFlashcards = true,
+    this.richContent,
+    this.drawingIds,
+    this.contentType,
   });
 }
 

@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:optional/optional.dart';
 import 'package:path/path.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:uuid/uuid.dart';
+// Removed external test-only dependencies (optional/uuid) to simplify example tests
 
 import 'test_doc_info.dart';
 
@@ -18,14 +17,14 @@ class PdfTestUtils {
   /// saves it to a File that is subsequently returned wrapped in a Future
   Future<File> createPdfFile(List<List<String>> pages,
       {TestDocInfo? info}) async {
-    final pdf = Optional.ofNullable(info)
-        .map((i) => pw.Document(
-            title: i.title,
-            author: i.author,
-            creator: i.creator,
-            subject: i.subject,
-            keywords: i.keywords))
-        .orElse(pw.Document());
+    final pdf = info != null
+      ? pw.Document(
+        title: info.title,
+        author: info.author,
+        creator: info.creator,
+        subject: info.subject,
+        keywords: info.keywords)
+      : pw.Document();
 
     final pdfPages = pages
         .map((page) => pw.MultiPage(
@@ -39,7 +38,7 @@ class PdfTestUtils {
       pdf.addPage(page);
     }
 
-    String testFile = join(testDirectoryPath, "${Uuid().v1()}.pdf");
+    String testFile = join(testDirectoryPath, "${DateTime.now().microsecondsSinceEpoch}.pdf");
     final file = File(testFile);
 
     await file.writeAsBytes(await pdf.save());

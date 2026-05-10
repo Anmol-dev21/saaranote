@@ -346,7 +346,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isAiEnhanced && parsed.isValid)
-            _buildAiEnhancedLabel(state!)
+            _buildAiEnhancedLabel(state)
           else
             _buildFallbackBanner(state),
           const SizedBox(height: 8),

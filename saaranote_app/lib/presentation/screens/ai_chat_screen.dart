@@ -91,7 +91,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.4),
+            color: theme.dividerColor.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -212,7 +212,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   color: bubbleColor,
                   borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   border: Border.all(
-                    color: theme.dividerColor.withOpacity(0.4),
+                    color: theme.dividerColor.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Text(
@@ -244,7 +244,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       height: 28,
       width: 28,
       decoration: BoxDecoration(
-        color: avatarColor.withOpacity(0.15),
+        color: avatarColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(9),
       ),
       child: Center(
@@ -316,7 +316,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   Widget _buildTypingIndicator(BuildContext context) {
     final theme = Theme.of(context);
-    final dotColor = theme.colorScheme.onSurfaceVariant.withOpacity(0.6);
+    final dotColor = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
 
     return Row(
       children: [
@@ -327,7 +327,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             border: Border.all(
-              color: theme.dividerColor.withOpacity(0.4),
+              color: theme.dividerColor.withValues(alpha: 0.4),
             ),
           ),
           child: Row(
@@ -379,7 +379,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
       case MessageStatus.error:
         return 'Error';
       case MessageStatus.sent:
-      default:
         return message.role == MessageRole.user ? 'Sent' : 'Answered';
     }
   }
@@ -423,7 +422,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.4),
+            color: theme.dividerColor.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -433,7 +432,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               height: 32,
               width: 32,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -508,7 +507,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -563,7 +562,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surface,
           border: Border(
             top: BorderSide(
-              color: theme.dividerColor.withOpacity(0.5),
+              color: theme.dividerColor.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -584,13 +583,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.4),
+                      color: theme.dividerColor.withValues(alpha: 0.4),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.4),
+                      color: theme.dividerColor.withValues(alpha: 0.4),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(

@@ -3,7 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:pdf_text/pdf_text.dart';
+import '../../lib/pdf_text.dart';
 
 void main() => runApp(MyApp());
 

@@ -25,7 +25,7 @@ class HybridSummaryService {
   /// New API: returns a structured result with state for accurate UI mapping.
   Future<SummaryResult> generateFinalSummaryResult(String structuredSummary) async {
     final trimmed = structuredSummary.trim();
-    if (trimmed.isEmpty) return const SummaryResult(summary: '', state: SummaryGenerationState.fallback);
+    if (trimmed.isEmpty) return SummaryResult(summary: '', state: SummaryGenerationState.fallback);
 
     final safeInput = _truncateInput(trimmed);
     final cached = _summaryCache[safeInput];

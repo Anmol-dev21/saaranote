@@ -6,6 +6,7 @@ import 'core/design_system/app_theme.dart';
 
 // Data layer
 import 'data/datasources/local/database_helper.dart';
+import 'data/datasources/local/drawing_local_data_source.dart';
 import 'data/repositories/note_repository_impl.dart';
 import 'data/repositories/summary_repository_impl.dart';
 import 'data/repositories/flashcard_repository_impl.dart';
@@ -56,11 +57,6 @@ class MyApp extends StatelessWidget {
     // Initialize dependencies
     final databaseHelper = DatabaseHelper.instance;
     
-    // Repositories
-    final noteRepository = NoteRepositoryImpl(databaseHelper);
-    final summaryRepository = SummaryRepositoryImpl(databaseHelper);
-    final flashcardRepository = FlashcardRepositoryImpl(databaseHelper);
-    
     // Services
     final ocrService = OcrService();
     final pdfExportService = PdfExportService();
@@ -69,6 +65,14 @@ class MyApp extends StatelessWidget {
     final drawingService = DrawingService();
     final llmService = LlmService();
     final hybridSummaryService = HybridSummaryService(llmService: llmService);
+    
+    // Repositories
+    final noteRepository = NoteRepositoryImpl(databaseHelper);
+    final summaryRepository = SummaryRepositoryImpl(databaseHelper);
+    final flashcardRepository = FlashcardRepositoryImpl(databaseHelper);
+    
+    // Data sources
+    final drawingLocalDataSource = DrawingLocalDataSource(databaseHelper, drawingService);
     
     // Use cases
     final getAllNotesUseCase = GetAllNotesUseCase(noteRepository);
@@ -120,6 +124,7 @@ class MyApp extends StatelessWidget {
             createNoteFromTextUseCase,
             createNoteFromImageUseCase,
             createNoteFromPdfUseCase,
+            drawingLocalDataSource,
           ),
         ),
         ChangeNotifierProvider(
@@ -128,6 +133,7 @@ class MyApp extends StatelessWidget {
             getSummariesForNoteUseCase,
             getFlashcardsForNoteUseCase,
             pdfExportService,
+            drawingLocalDataSource,
           ),
         ),
         ChangeNotifierProvider(

@@ -4,10 +4,10 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pdf_text/client_provider.dart';
+import 'client_provider.dart';
 
-const MethodChannel _CHANNEL = MethodChannel('pdf_text');
-const String _TEMP_DIR_NAME = ".flutter_pdf_text";
+const MethodChannel _channel = MethodChannel('pdf_text');
+const String _tempDirName = ".flutter_pdf_text";
 
 /// Class representing a PDF document.
 /// In order to create a new [PDFDoc] instance, one of these static methods has
@@ -28,7 +28,7 @@ class PDFDoc {
     doc._file = file;
     late Map data;
     try {
-      data = await _CHANNEL
+      data = await _channel
           .invokeMethod('initDoc', {"path": file.path, "password": password});
     } on Exception catch (e) {
       return Future.error(e);
@@ -53,7 +53,7 @@ class PDFDoc {
     try {
       String tempDirPath = (await getTemporaryDirectory()).path;
 
-      String filePath = join(tempDirPath, _TEMP_DIR_NAME,
+      String filePath = join(tempDirPath, _tempDirName,
           "${url.split("/").last.split(".").first}.pdf");
 
       file = File(filePath);
@@ -98,7 +98,7 @@ class PDFDoc {
     if (missingPagesNumbers.isNotEmpty) {
       try {
         missingPagesTexts =
-            List<String>.from(await (_CHANNEL.invokeMethod('getDocText', {
+            List<String>.from(await (_channel.invokeMethod('getDocText', {
           "path": _file.path,
           "missingPagesNumbers": missingPagesNumbers,
           "password": _password
@@ -130,7 +130,7 @@ class PDFDoc {
   static Future deleteAllExternalFiles() async {
     try {
       String tempDirPath = (await getTemporaryDirectory()).path;
-      Directory dir = Directory(join(tempDirPath, _TEMP_DIR_NAME));
+      Directory dir = Directory(join(tempDirPath, _tempDirName));
 
       if (dir.existsSync()) {
         dir.deleteSync(recursive: true);
@@ -161,7 +161,7 @@ class PDFPage {
     // Loading the text
     if (_text == null) {
       try {
-        _text = await _CHANNEL.invokeMethod('getDocPageText', {
+        _text = await _channel.invokeMethod('getDocPageText', {
           "path": _parentDoc._file.path,
           "number": number,
           "password": _parentDoc._password

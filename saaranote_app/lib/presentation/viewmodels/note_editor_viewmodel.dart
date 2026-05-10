@@ -53,9 +53,24 @@ class NoteEditorViewModel extends ChangeNotifier {
   // Drawing state
   final List<Drawing> _drawings = [];
   List<DrawingStroke> _currentStrokes = [];
+  int _drawingRevision = 0;  // Track drawing changes for repaint optimization
   
   List<Drawing> get drawings => _drawings;
   bool get hasDrawings => _drawings.isNotEmpty;
+  int get drawingRevision => _drawingRevision;
+  
+  /// Get the currently active stroke (last one being drawn)
+  DrawingStroke? get activeStroke => _currentStrokes.isNotEmpty ? _currentStrokes.last : null;
+  
+  /// Check if any current strokes are eraser strokes
+  bool get hasEraserStrokes {
+    for (final stroke in _currentStrokes) {
+      if (stroke.style.type == StrokeType.eraser) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // Drawing tool settings
   Color _penColor = Colors.black;
@@ -287,6 +302,7 @@ class NoteEditorViewModel extends ChangeNotifier {
     );
     
     _currentStrokes.add(stroke);
+    _drawingRevision++;
     notifyListeners();
   }
 
@@ -312,6 +328,7 @@ class NoteEditorViewModel extends ChangeNotifier {
       createdAt: lastStroke.createdAt,
     );
     
+    _drawingRevision++;
     notifyListeners();
   }
 
@@ -324,6 +341,7 @@ class NoteEditorViewModel extends ChangeNotifier {
     final optimized = _drawingService.optimizeStroke(lastStroke);
     _currentStrokes[_currentStrokes.length - 1] = optimized;
     
+    _drawingRevision++;
     notifyListeners();
   }
 
