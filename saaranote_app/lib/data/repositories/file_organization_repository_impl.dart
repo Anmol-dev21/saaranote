@@ -46,6 +46,20 @@ class FileOrganizationRepositoryImpl implements FileOrganizationRepository {
   }
 
   @override
+  Future<FileMetadata?> getFileByRelatedNoteId(String relatedNoteId) async {
+    final db = await _databaseHelper.database;
+    final results = await db.query(
+      'file_metadata',
+      where: 'related_note_id = ?',
+      whereArgs: [relatedNoteId],
+      limit: 1,
+    );
+
+    if (results.isEmpty) return null;
+    return FileMetadataModel.fromMap(results.first).toEntity();
+  }
+
+  @override
   Future<List<FileMetadata>> getAllFiles() async {
     final db = await _databaseHelper.database;
     final results = await db.query(

@@ -1,7 +1,7 @@
+// ignore_for_file: avoid_print
 import 'package:path_provider/path_provider.dart';
 import '../domain/entities/file_metadata.dart';
 import '../core/services/file_organization_service.dart';
-import '../domain/usecases/organize_file_usecase.dart';
 import '../domain/usecases/get_storage_stats_usecase.dart';
 import '../data/repositories/file_organization_repository_impl.dart';
 import '../data/datasources/local/database_helper.dart';
@@ -49,7 +49,7 @@ Future<void> testFileOrganizationSystem() async {
       fileSize: 1024,
     );
     
-    final targetFolder = testMetadata.getTargetFolder(baseStoragePath);
+    final targetFolder = '$baseStoragePath/${testMetadata.getTargetFolder()}';
     print('   • Target folder: $targetFolder');
     
     final expectedPattern = RegExp(r'.*/Mathematics/\d{4}-\d{2}/pdf$');

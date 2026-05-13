@@ -4,9 +4,11 @@ import '../../domain/entities/note.dart';
 import '../../domain/entities/note_summary.dart';
 import '../../domain/entities/flashcard.dart';
 import '../../domain/entities/drawing.dart';
+import '../../domain/entities/file_metadata.dart';
 import '../../domain/usecases/get_note_by_id_usecase.dart';
 import '../../domain/usecases/get_summaries_for_note_usecase.dart';
 import '../../domain/usecases/get_flashcards_for_note_usecase.dart';
+import '../../domain/usecases/get_source_file_for_note_usecase.dart';
 import '../../core/services/pdf_export_service.dart';
 import '../../data/datasources/local/drawing_local_data_source.dart';
 
@@ -17,6 +19,7 @@ class NoteDetailViewModel extends ChangeNotifier {
   final GetNoteByIdUseCase _getNoteByIdUseCase;
   final GetSummariesForNoteUseCase _getSummariesForNoteUseCase;
   final GetFlashcardsForNoteUseCase _getFlashcardsForNoteUseCase;
+  final GetSourceFileForNoteUseCase _getSourceFileForNoteUseCase;
   final PdfExportService _pdfExportService;
   final DrawingLocalDataSource _drawingLocalDataSource;
 
@@ -24,6 +27,7 @@ class NoteDetailViewModel extends ChangeNotifier {
     this._getNoteByIdUseCase,
     this._getSummariesForNoteUseCase,
     this._getFlashcardsForNoteUseCase,
+    this._getSourceFileForNoteUseCase,
     this._pdfExportService,
     this._drawingLocalDataSource,
   );
@@ -33,16 +37,19 @@ class NoteDetailViewModel extends ChangeNotifier {
   List<NoteSummary> _summaries = [];
   List<Flashcard> _flashcards = [];
   List<Drawing> _drawings = [];
+  FileMetadata? _sourceFile;
   bool _isLoading = false;
   String? _errorMessage;
   File? _exportedPdfFile;
   bool _isExporting = false;
+  bool _isDisposed = false;
 
   // Getters
   Note? get note => _note;
   List<NoteSummary> get summaries => _summaries;
   List<Flashcard> get flashcards => _flashcards;
   List<Drawing> get drawings => _drawings;
+  FileMetadata? get sourceFile => _sourceFile;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasError => _errorMessage != null;
@@ -50,6 +57,7 @@ class NoteDetailViewModel extends ChangeNotifier {
   bool get hasSummaries => _summaries.isNotEmpty;
   bool get hasFlashcards => _flashcards.isNotEmpty;
   bool get hasDrawings => _drawings.isNotEmpty;
+  bool get hasSourceFile => _sourceFile != null;
   int get summaryCount => _summaries.length;
   int get flashcardCount => _flashcards.length;
   File? get exportedPdfFile => _exportedPdfFile;
@@ -60,11 +68,23 @@ class NoteDetailViewModel extends ChangeNotifier {
   Future<void> loadNoteDetails(int noteId) async {
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _sourceFile = null;
+    _notifySafely();
 
     try {
       // Load note
       _note = await _getNoteByIdUseCase.execute(noteId);
+      if (_note == null) {
+        _isLoading = false;
+        _errorMessage = 'Note not found';
+        _notifySafely();
+        return;
+      }
+
+        // Load linked source file (image/pdf) if available
+        _sourceFile = _note?.id != null
+          ? await _getSourceFileForNoteUseCase.execute(_note!.id!)
+          : null;
 
       // Load summaries
       _summaries = await _getSummariesForNoteUseCase.execute(noteId);
@@ -80,11 +100,11 @@ class NoteDetailViewModel extends ChangeNotifier {
       }
 
       _isLoading = false;
-      notifyListeners();
+      _notifySafely();
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Failed to load note details: ${e.toString()}';
-      notifyListeners();
+      _notifySafely();
     }
   }
 
@@ -107,17 +127,18 @@ class NoteDetailViewModel extends ChangeNotifier {
     _summaries = [];
     _flashcards = [];
     _drawings = [];
+    _sourceFile = null;
     _isLoading = false;
     _errorMessage = null;
     _exportedPdfFile = null;
     _isExporting = false;
-    notifyListeners();
+    _notifySafely();
   }
 
   /// Clear error message
   void clearError() {
     _errorMessage = null;
-    notifyListeners();
+    _notifySafely();
   }
 
   /// Export the current note as PDF
@@ -145,13 +166,24 @@ class NoteDetailViewModel extends ChangeNotifier {
       );
 
       _isExporting = false;
-      notifyListeners();
+      _notifySafely();
     } catch (e) {
       _isExporting = false;
       _errorMessage = 'Failed to export PDF: ${e.toString()}';
       _exportedPdfFile = null;
-      notifyListeners();
+      _notifySafely();
     }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _notifySafely() {
+    if (_isDisposed) return;
+    notifyListeners();
   }
 
   /// Get note statistics

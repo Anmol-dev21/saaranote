@@ -150,7 +150,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             border: Border.all(
-              color: theme.dividerColor.withOpacity(0.4),
+              color: theme.dividerColor.withValues(alpha: 0.4),
             ),
           ),
           padding: AppSpacing.paddingSm,
@@ -215,7 +215,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               color: theme.colorScheme.surfaceContainerLow,
               borderRadius: AppSpacing.borderRadiusMd,
               border: Border.all(
-                color: theme.dividerColor.withOpacity(0.4),
+                color: theme.dividerColor.withValues(alpha: 0.4),
               ),
             ),
             child: TextFormField(
@@ -278,7 +278,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: AppSpacing.borderRadiusMd,
             border: Border.all(
-              color: theme.dividerColor.withOpacity(0.4),
+              color: theme.dividerColor.withValues(alpha: 0.4),
             ),
           ),
           child: Column(
@@ -394,7 +394,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: AppSpacing.borderRadiusMd,
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.4),
+          color: theme.dividerColor.withValues(alpha: 0.4),
         ),
       ),
       child: Column(
@@ -457,11 +457,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         generateFlashcards: true,
       );
 
-      if (success && mounted) {
+      if (!mounted) return;
+
+      if (success) {
         final createdNote = createViewModel.createdNote;
         if (createdNote != null) {
           if (editorViewModel.hasDrawings) {
             await editorViewModel.persistDrawings(createdNote.id!);
+            if (!mounted) return;
           }
 
           final richContent = editorViewModel.getRichTextContent();
@@ -475,17 +478,20 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               richContent: richContent,
               contentType: contentType,
             );
+            if (!mounted) return;
           }
         }
 
         editorViewModel.reset();
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Note saved successfully')),
         );
 
         Navigator.of(context).pop();
-      } else if (mounted) {
+      } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(createViewModel.errorMessage ?? 'Failed to save note'),
@@ -494,14 +500,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

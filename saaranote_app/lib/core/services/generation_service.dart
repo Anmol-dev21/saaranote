@@ -142,8 +142,8 @@ class GenerationService {
     final result = await _aiEngine.generateSummary(text: text);
     return SummaryFormatter.formatStructuredSummary(
       result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      includeSections: false,
+      includeDetailed: false,
       simplify: true,
     );
   }

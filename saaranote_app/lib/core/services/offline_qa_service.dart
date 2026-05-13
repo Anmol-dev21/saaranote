@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/query_intent.dart';
 import '../../domain/entities/retrieval_result.dart';
@@ -39,14 +40,28 @@ class OfflineQaService {
 
       final intent = _queryProcessor.classifyIntent(query);
       final expandedQuery = _expandQuery(query);
+      debugPrint('Retrieval: expanded query="$expandedQuery"');
 
-      final candidates = await _retrievalService.retrieve(
+      var candidates = await _retrievalService.retrieve(
         query: expandedQuery,
         limit: limit * 2,
       );
 
+      if (candidates.isEmpty && expandedQuery.trim() != query.trim()) {
+        debugPrint('Retrieval: retrying with original query');
+        candidates = await _retrievalService.retrieve(
+          query: query,
+          limit: limit * 2,
+        );
+      }
+
       final reranked = _rerankResults(query, candidates, maxChars: maxChars);
-      final context = reranked.take(limit).toList();
+      _logTopResults(reranked);
+      var context = reranked.take(limit).toList();
+      if (context.isEmpty && candidates.isNotEmpty) {
+        context = candidates.take(limit).toList();
+        debugPrint('Retrieval: using fallback context from candidates.');
+      }
 
       if (context.isEmpty) {
         return const GeneratedResponse(
@@ -102,6 +117,61 @@ class OfflineQaService {
         confidence: 0.0,
       );
     }
+  }
+
+  Future<DebugQaResult> debugAnswer({
+    required String query,
+    int limit = 5,
+    int maxChars = 8000,
+  }) async {
+    final expandedQuery = _expandQuery(query);
+    var candidates = await _retrievalService.retrieve(
+      query: expandedQuery,
+      limit: limit * 2,
+    );
+
+    if (candidates.isEmpty && expandedQuery.trim() != query.trim()) {
+      candidates = await _retrievalService.retrieve(
+        query: query,
+        limit: limit * 2,
+      );
+    }
+
+    final reranked = _rerankResults(query, candidates, maxChars: maxChars);
+    final context = reranked.take(limit).toList();
+
+    String answer;
+    if (context.isEmpty) {
+      answer = 'No relevant information found in your notes.';
+    } else {
+      final intent = _queryProcessor.classifyIntent(query);
+      switch (intent) {
+        case QueryIntent.questionAnswering:
+          answer = _answerQuestion(query, context, maxChars: maxChars);
+          break;
+        case QueryIntent.definition:
+          answer = _generateDefinition(context, query, maxChars: maxChars);
+          break;
+        case QueryIntent.listExtraction:
+          answer = _generateList(context, maxChars: maxChars);
+          break;
+        case QueryIntent.summarization:
+          answer = await _generateSummary(context, maxChars: maxChars);
+          break;
+        case QueryIntent.comparison:
+          answer = _generateComparison(context, maxChars: maxChars);
+          break;
+      }
+    }
+
+    return DebugQaResult(
+      query: query,
+      expandedQuery: expandedQuery,
+      candidates: candidates,
+      reranked: reranked,
+      context: context,
+      answer: answer,
+    );
   }
 
   String _expandQuery(String query) {
@@ -165,6 +235,24 @@ class OfflineQaService {
 
     reranked.sort((a, b) => b.score.compareTo(a.score));
     return reranked;
+  }
+
+  void _logTopResults(List<RetrievalResult> results) {
+    if (results.isEmpty) {
+      debugPrint('Retrieval: rerank produced 0 results');
+      return;
+    }
+
+    final preview = results.take(3).map((result) {
+      final snippet = _truncate(result.chunk.content, 60)
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+      return '#${result.chunk.id ?? result.chunk.chunkIndex} '
+          'score=${result.score.toStringAsFixed(3)} '
+          'preview="$snippet"';
+    }).join(' | ');
+
+    debugPrint('Retrieval: top results $preview');
   }
 
   String _answerQuestion(
@@ -285,8 +373,8 @@ class OfflineQaService {
     final result = await _aiEngine.generateSummary(text: truncated);
     return SummaryFormatter.formatStructuredSummary(
       result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      includeSections: false,
+      includeDetailed: false,
       simplify: true,
     );
   }
@@ -359,6 +447,24 @@ class OfflineQaService {
     'problem': ['issue', 'challenge'],
     'method': ['approach', 'technique'],
   };
+}
+
+class DebugQaResult {
+  final String query;
+  final String expandedQuery;
+  final List<RetrievalResult> candidates;
+  final List<RetrievalResult> reranked;
+  final List<RetrievalResult> context;
+  final String answer;
+
+  const DebugQaResult({
+    required this.query,
+    required this.expandedQuery,
+    required this.candidates,
+    required this.reranked,
+    required this.context,
+    required this.answer,
+  });
 }
 
 /// Generated response with metadata

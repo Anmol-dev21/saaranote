@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../entities/note.dart';
 import '../entities/note_summary.dart';
 import '../entities/flashcard.dart';
@@ -5,11 +6,14 @@ import '../repositories/note_repository.dart';
 import '../repositories/summary_repository.dart';
 import '../repositories/flashcard_repository.dart';
 import '../entities/rich_text_content.dart';
+import '../entities/file_metadata.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
 import '../../core/utils/summary_formatter.dart';
 import '../../core/ai_engine.dart';
+import '../../core/services/hybrid_summary_service.dart';
+import '../../core/services/document_indexing_service.dart';
 
 /// Use case for creating a note from text input with automatic summarization
 /// and flashcard generation
@@ -18,13 +22,17 @@ class CreateNoteFromTextUseCase {
   final SummaryRepository _summaryRepository;
   final FlashcardRepository _flashcardRepository;
   final AIEngine? _aiEngine;
+  final HybridSummaryService? _hybridSummaryService;
+  final DocumentIndexingService? _indexingService;
 
   CreateNoteFromTextUseCase(
     this._noteRepository,
     this._summaryRepository,
     this._flashcardRepository,
     this._aiEngine,
-  );
+    this._hybridSummaryService, [
+    this._indexingService,
+  ]);
 
   /// Execute the use case to create a note with summaries and flashcards
   /// 
@@ -59,6 +67,25 @@ class CreateNoteFromTextUseCase {
 
     final createdNote = await _noteRepository.create(note);
     final noteId = createdNote.id!;
+
+    final indexingService = _indexingService;
+    if (indexingService != null) {
+      try {
+        debugPrint('Indexing: text note $noteId');
+        await indexingService.indexNoteContent(
+          noteId: noteId,
+          title: createdNote.title,
+          content: cleanedContent,
+          fileType: FileType.note,
+        );
+        debugPrint('Indexing: text note $noteId complete');
+      } catch (_) {
+        // Do not block note creation if indexing fails
+        debugPrint('Indexing: text note $noteId failed');
+      }
+    } else {
+      debugPrint('Indexing: text note $noteId skipped (service unavailable)');
+    }
 
     // Generate and save summary if enabled
     NoteSummary? createdSummary;
@@ -112,20 +139,32 @@ class CreateNoteFromTextUseCase {
 
   Future<String> _generateSummaryText(String content) async {
     if (_aiEngine == null) {
-      return Summarizer.generateDetailedSummary(content);
+      return SummaryFormatter.ensureStructuredText(
+        Summarizer.generateDetailedSummary(content),
+      );
     }
 
     final result = await _aiEngine.generateSummary(text: content);
     final structuredText = SummaryFormatter.formatStructuredSummary(
       result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      includeSections: false,
+      includeDetailed: false,
     );
-    if (structuredText.isNotEmpty) return structuredText;
-
-    return result.detailedSummary.isNotEmpty
+    final fallback = structuredText.isNotEmpty
+        ? structuredText
+        : (result.detailedSummary.isNotEmpty
         ? result.detailedSummary
-        : Summarizer.generateDetailedSummary(content);
+        : Summarizer.generateDetailedSummary(content));
+
+    final hybridService = _hybridSummaryService;
+    if (hybridService != null && structuredText.isNotEmpty) {
+      final enhanced = await hybridService.enhanceSummary(structuredText);
+      if (enhanced != null) {
+        return SummaryFormatter.ensureStructuredText(enhanced);
+      }
+    }
+
+    return SummaryFormatter.ensureStructuredText(fallback);
   }
 
   /// Generate a title from the content if not provided

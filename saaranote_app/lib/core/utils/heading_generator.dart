@@ -85,14 +85,6 @@ class HeadingGenerator {
     return -1;
   }
 
-  static String _normalizeTitle(String text) {
-    String cleaned = text.trim();
-    cleaned = cleaned.replaceAll(RegExp(r'[.!?]+$'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
-    final words = cleaned.split(' ').where((w) => w.isNotEmpty).toList();
-    return _capitalizeWords(words).join(' ');
-  }
-
   static List<String> _capitalizeWords(List<String> words) {
     return words.map((word) {
       if (word.isEmpty) return word;

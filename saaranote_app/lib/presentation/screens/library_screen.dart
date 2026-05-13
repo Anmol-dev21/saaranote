@@ -96,7 +96,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.4),
+            color: theme.dividerColor.withValues(alpha: 0.4),
           ),
         ),
         child: TabBar(
@@ -220,7 +220,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   height: 44,
                   width: 44,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.12),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -301,8 +301,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Widget _buildTagsTab(BuildContext context) {
-    final theme = Theme.of(context);
-
     return SingleChildScrollView(
       padding: AppSpacing.pagePadding.add(AppSpacing.verticalMd),
       child: Column(
@@ -427,7 +425,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: accent.withOpacity(0.15),
+                  color: accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.note_outlined, color: accent, size: 20),
@@ -667,7 +665,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.4),
+          color: theme.dividerColor.withValues(alpha: 0.4),
         ),
       ),
       child: Row(
@@ -709,7 +707,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           height: 36,
           width: 36,
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.12),
+            color: theme.colorScheme.primary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 18, color: theme.colorScheme.primary),

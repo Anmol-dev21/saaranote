@@ -46,8 +46,8 @@ class AppTheme {
         outline: AppColors.gray300Light,
         outlineVariant: AppColors.gray200Light,
         
-        shadow: AppColors.gray900Light.withOpacity(0.08),
-        scrim: AppColors.gray900Light.withOpacity(0.5),
+        shadow: AppColors.gray900Light.withValues(alpha: 0.08),
+        scrim: AppColors.gray900Light.withValues(alpha: 0.5),
       ),
       
       // Typography
@@ -302,8 +302,8 @@ class AppTheme {
         outline: AppColors.gray400Dark,
         outlineVariant: AppColors.gray300Dark,
         
-        shadow: Colors.black.withOpacity(0.3),
-        scrim: Colors.black.withOpacity(0.7),
+        shadow: Colors.black.withValues(alpha: 0.3),
+        scrim: Colors.black.withValues(alpha: 0.7),
       ),
       
       // Typography

@@ -50,13 +50,21 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       body: Consumer<CreateNoteViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(
+            final message = _processingMessage();
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Processing...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(message),
+                  const SizedBox(height: 6),
+                  Text(
+                    'This may take a few seconds.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
                 ],
               ),
             );
@@ -109,7 +117,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.4),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
             ),
           ),
           padding: AppSpacing.paddingXs,
@@ -426,9 +434,9 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     return Container(
       padding: AppSpacing.paddingSm,
       decoration: BoxDecoration(
-        color: AppColors.errorLight.withOpacity(0.08),
+        color: AppColors.errorLight.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.errorLight.withOpacity(0.3)),
+        border: Border.all(color: AppColors.errorLight.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -465,7 +473,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.4),
+          color: theme.dividerColor.withValues(alpha: 0.4),
         ),
       ),
       child: Column(
@@ -506,7 +514,9 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     try {
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85,
+        imageQuality: 100,
+        maxWidth: 2000,
+        maxHeight: 2000,
       );
 
       if (pickedFile != null) {
@@ -617,6 +627,23 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           ),
         );
       }
+    }
+  }
+
+  String _processingMessage() {
+    switch (_selectedTab) {
+      case 1:
+        return _generateSummary || _generateFlashcards
+            ? 'Running OCR and generating insights...'
+            : 'Running OCR on image...';
+      case 2:
+        return _generateSummary || _generateFlashcards
+            ? 'Extracting PDF text and generating insights...'
+            : 'Extracting text from PDF...';
+      default:
+        return _generateSummary || _generateFlashcards
+            ? 'Saving note and generating insights...'
+            : 'Saving note...';
     }
   }
 }

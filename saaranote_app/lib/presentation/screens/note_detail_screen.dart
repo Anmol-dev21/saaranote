@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/note_detail_viewmodel.dart';
+import '../../domain/entities/note.dart';
 import '../../domain/entities/drawing.dart';
 import '../../domain/entities/rich_text_content.dart' as domain;
+import '../../domain/entities/file_metadata.dart';
 import '../../core/design_system/app_components.dart';
 import '../../core/design_system/app_spacing.dart';
 import '../../core/design_system/app_typography.dart';
@@ -64,7 +67,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       body: Consumer<NoteDetailViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoadingIndicator(message: 'Loading note details...');
           }
 
           if (viewModel.hasError) {
@@ -97,9 +100,186 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           }
 
           final note = viewModel.note!;
+          final sourceFile = viewModel.sourceFile;
           final contentStyle = AppTypography.body(
             color: theme.colorScheme.onSurface,
           );
+          final detailSections = <Widget>[];
+
+          if (sourceFile != null &&
+              (sourceFile.fileType == FileType.image ||
+                  sourceFile.fileType == FileType.pdf)) {
+            detailSections.add(
+              _buildSection(
+                title: sourceFile.fileType == FileType.image
+                    ? 'Original Image'
+                    : 'Original PDF',
+                icon: sourceFile.fileType == FileType.image
+                    ? Icons.image
+                    : Icons.picture_as_pdf,
+                child: _buildSourcePreview(sourceFile, theme),
+              ),
+            );
+            detailSections.add(
+              _buildSection(
+                title: 'Extracted Text',
+                icon: Icons.text_snippet,
+                child: _buildExtractedText(note, contentStyle),
+              ),
+            );
+          } else {
+            detailSections.add(
+              _buildSection(
+                title: 'Content',
+                icon: Icons.article,
+                child: _buildNoteContent(note, contentStyle),
+              ),
+            );
+          }
+
+          if (viewModel.hasSummaries) {
+            detailSections.add(
+              _buildSection(
+                title: 'Summary',
+                icon: Icons.description,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: viewModel.summaries.map((summary) {
+                    return Padding(
+                      padding: AppSpacing.verticalXs,
+                      child: Container(
+                        padding: AppSpacing.paddingMd,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: AppSpacing.borderRadiusMd,
+                          border: Border.all(
+                            color: theme.dividerColor.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: SelectableText(
+                          summary.summaryText,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          }
+
+          if (viewModel.hasDrawings) {
+            detailSections.add(
+              _buildSection(
+                title: 'Drawings',
+                icon: Icons.draw,
+                child: Column(
+                  children: viewModel.drawings.map((drawing) {
+                    return Padding(
+                      padding: AppSpacing.verticalXs,
+                      child: Container(
+                        padding: AppSpacing.paddingSm,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: AppSpacing.borderRadiusMd,
+                          border: Border.all(
+                            color: theme.dividerColor.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: 4 / 3,
+                          child: ClipRRect(
+                            borderRadius: AppSpacing.borderRadiusSm,
+                            child: CustomPaint(
+                              painter: _DrawingPreviewPainter(drawing: drawing),
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          }
+
+          if (viewModel.hasFlashcards) {
+            detailSections.add(
+              _buildSection(
+                title: 'Flashcards',
+                icon: Icons.psychology,
+                child: Column(
+                  children: viewModel.flashcards.map((flashcard) {
+                    return Padding(
+                      padding: AppSpacing.verticalXs,
+                      child: Card(
+                        elevation: 0,
+                        color: theme.colorScheme.surfaceContainerLow,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                          side: BorderSide(
+                            color: theme.dividerColor.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: ExpansionTile(
+                          tilePadding: AppSpacing.paddingMd,
+                          childrenPadding: AppSpacing.paddingMd,
+                          title: Text(
+                            flashcard.question,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
+                            child: Text(
+                              '${flashcard.confidenceLevel}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Answer',
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                AppSpacing.vGapXs,
+                                SelectableText(
+                                  flashcard.answer,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                if (flashcard.lastReviewedAt != null) ...[
+                                  AppSpacing.vGapSm,
+                                  Text(
+                                    'Last reviewed: ${_formatDate(flashcard.lastReviewedAt!)}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          }
 
           return RefreshIndicator(
             onRefresh: () => viewModel.refresh(),
@@ -137,159 +317,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ],
                   ),
                   AppSpacing.vGapLg,
-
-                  _buildSection(
-                    title: 'Content',
-                    icon: Icons.article,
-                    child: note.hasRichContent
-                        ? SelectableText.rich(
-                            _buildRichTextSpan(note.richContent!, contentStyle),
-                          )
-                        : SelectableText(
-                            note.content,
-                            style: contentStyle,
-                          ),
-                  ),
-
-                  if (viewModel.hasDrawings) ...[
-                    AppSpacing.vGapLg,
-                    _buildSection(
-                      title: 'Drawings',
-                      icon: Icons.draw,
-                      child: Column(
-                        children: viewModel.drawings.map((drawing) {
-                          return Padding(
-                            padding: AppSpacing.verticalXs,
-                            child: Container(
-                              padding: AppSpacing.paddingSm,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: AppSpacing.borderRadiusMd,
-                                border: Border.all(
-                                  color: theme.dividerColor.withOpacity(0.4),
-                                ),
-                              ),
-                              child: AspectRatio(
-                                aspectRatio: 4 / 3,
-                                child: ClipRRect(
-                                  borderRadius: AppSpacing.borderRadiusSm,
-                                  child: CustomPaint(
-                                    painter: _DrawingPreviewPainter(drawing: drawing),
-                                    child: const SizedBox.expand(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-
-                  if (viewModel.hasSummaries) ...[
-                    AppSpacing.vGapLg,
-                    _buildSection(
-                      title: 'Summary',
-                      icon: Icons.description,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: viewModel.summaries.map((summary) {
-                          return Padding(
-                            padding: AppSpacing.verticalXs,
-                            child: Container(
-                              padding: AppSpacing.paddingMd,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: AppSpacing.borderRadiusMd,
-                                border: Border.all(
-                                  color: theme.dividerColor.withOpacity(0.4),
-                                ),
-                              ),
-                              child: SelectableText(
-                                summary.summaryText,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  height: 1.6,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-
-                  if (viewModel.hasFlashcards) ...[
-                    AppSpacing.vGapLg,
-                    _buildSection(
-                      title: 'Flashcards',
-                      icon: Icons.psychology,
-                      child: Column(
-                        children: viewModel.flashcards.map((flashcard) {
-                          return Padding(
-                            padding: AppSpacing.verticalXs,
-                            child: Card(
-                              elevation: 0,
-                              color: theme.colorScheme.surfaceContainerLow,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                                side: BorderSide(
-                                  color: theme.dividerColor.withOpacity(0.4),
-                                ),
-                              ),
-                              child: ExpansionTile(
-                                tilePadding: AppSpacing.paddingMd,
-                                childrenPadding: AppSpacing.paddingMd,
-                                title: Text(
-                                  flashcard.question,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                leading: CircleAvatar(
-                                  backgroundColor: _getConfidenceColor(flashcard.confidenceLevel),
-                                  child: Text(
-                                    '${flashcard.confidenceLevel}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Answer',
-                                        style: theme.textTheme.labelMedium?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      AppSpacing.vGapXs,
-                                      SelectableText(
-                                        flashcard.answer,
-                                        style: theme.textTheme.bodyMedium,
-                                      ),
-                                      if (flashcard.lastReviewedAt != null) ...[
-                                        AppSpacing.vGapSm,
-                                        Text(
-                                          'Last reviewed: ${_formatDate(flashcard.lastReviewedAt!)}',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
+                  for (int i = 0; i < detailSections.length; i++) ...[
+                    detailSections[i],
+                    if (i < detailSections.length - 1) AppSpacing.vGapLg,
                   ],
                 ],
               ),
@@ -304,7 +334,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     final viewModel = context.read<NoteDetailViewModel>();
     await viewModel.exportNoteAsPdf();
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     if (viewModel.hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -358,7 +388,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 height: 32,
                 width: 32,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
                 child: Icon(
@@ -394,7 +424,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.4),
+          color: theme.dividerColor.withValues(alpha: 0.4),
         ),
       ),
       child: Row(
@@ -415,6 +445,146 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildSourcePreview(FileMetadata sourceFile, ThemeData theme) {
+    final file = File(sourceFile.filePath);
+    final exists = file.existsSync();
+
+    if (sourceFile.fileType == FileType.image) {
+      if (!exists) {
+        return Text(
+          'Original image not available.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        );
+      }
+      return ClipRRect(
+        borderRadius: AppSpacing.borderRadiusMd,
+        child: Image.file(
+          file,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+
+    return Container(
+      padding: AppSpacing.paddingMd,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: AppSpacing.borderRadiusMd,
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.picture_as_pdf,
+            color: theme.colorScheme.primary,
+            size: 36,
+          ),
+          AppSpacing.hGapSm,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sourceFile.fileName,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                AppSpacing.vGapXs,
+                Text(
+                  _formatFileSize(sourceFile.fileSize),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (!exists) ...[
+                  AppSpacing.vGapXs,
+                  Text(
+                    'Original PDF not available.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExtractedText(Note note, TextStyle contentStyle) {
+    final theme = Theme.of(context);
+    final preview = _buildContentPreview(note.content);
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: EdgeInsets.zero,
+      title: Text(
+        preview.isEmpty ? 'No extracted text available' : 'Tap to view text',
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: preview.isEmpty
+          ? null
+          : Text(
+              preview,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: _buildNoteContent(note, contentStyle),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNoteContent(Note note, TextStyle contentStyle) {
+    return note.hasRichContent
+        ? SelectableText.rich(
+            _buildRichTextSpan(note.richContent!, contentStyle),
+          )
+        : SelectableText(
+            note.content,
+            style: contentStyle,
+          );
+  }
+
+  String _buildContentPreview(String content) {
+    final collapsed = content.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (collapsed.isEmpty) return '';
+    if (collapsed.length <= 140) return collapsed;
+    return '${collapsed.substring(0, 140)}...';
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes <= 0) return 'Size unknown';
+    const kb = 1024;
+    const mb = kb * 1024;
+    if (bytes >= mb) {
+      final value = bytes / mb;
+      return '${value.toStringAsFixed(1)} MB';
+    }
+    if (bytes >= kb) {
+      final value = bytes / kb;
+      return '${value.toStringAsFixed(1)} KB';
+    }
+    return '$bytes B';
   }
 
   String _formatDate(DateTime date) {
@@ -524,14 +694,14 @@ class _DrawingPreviewPainter extends CustomPainter {
     final colorValue = int.parse(colorHex, radix: 16);
     final baseColor = Color(0xFF000000 | colorValue);
 
-    paint.color = baseColor.withOpacity(stroke.style.opacity);
+    paint.color = baseColor.withValues(alpha: stroke.style.opacity);
 
     switch (stroke.style.type) {
       case StrokeType.pen:
         break;
       case StrokeType.highlighter:
         paint.strokeWidth = stroke.style.width * 1.5;
-        paint.color = paint.color.withOpacity(0.4);
+        paint.color = paint.color.withValues(alpha: 0.4);
         break;
       case StrokeType.eraser:
         paint.color = Colors.white;

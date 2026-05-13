@@ -1,16 +1,21 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../entities/note.dart';
 import '../entities/note_summary.dart';
 import '../entities/flashcard.dart';
 import '../repositories/note_repository.dart';
 import '../repositories/summary_repository.dart';
 import '../repositories/flashcard_repository.dart';
+import '../entities/file_metadata.dart';
 import '../../core/services/pdf_text_service.dart';
+import '../../core/services/source_file_service.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
 import '../../core/utils/summary_formatter.dart';
 import '../../core/ai_engine.dart';
+import '../../core/services/hybrid_summary_service.dart';
+import '../../core/services/document_indexing_service.dart';
 
 /// Use case for creating a note from a PDF file with automatic
 /// summarization and flashcard generation
@@ -20,6 +25,9 @@ class CreateNoteFromPdfUseCase {
   final FlashcardRepository _flashcardRepository;
   final PdfTextService _pdfTextService;
   final AIEngine? _aiEngine;
+  final HybridSummaryService? _hybridSummaryService;
+  final DocumentIndexingService? _indexingService;
+  final SourceFileService? _sourceFileService;
 
   CreateNoteFromPdfUseCase(
     this._noteRepository,
@@ -27,7 +35,10 @@ class CreateNoteFromPdfUseCase {
     this._flashcardRepository,
     this._pdfTextService,
     this._aiEngine,
-  );
+    this._hybridSummaryService, [
+    this._indexingService,
+    this._sourceFileService,
+  ]);
 
   /// Execute the use case to create a note from a PDF file
   /// 
@@ -42,10 +53,36 @@ class CreateNoteFromPdfUseCase {
   /// 4. Generate and save summaries
   /// 5. Generate and save flashcards
   Future<CreateNoteFromPdfResult> execute(CreateNoteFromPdfParams params) async {
+    if (!await params.pdfFile.exists()) {
+      throw CreateNoteFromPdfException('PDF file not found');
+    }
+    if (await params.pdfFile.length() == 0) {
+      throw CreateNoteFromPdfException('PDF file is empty');
+    }
+
+    final sourceFileService = _sourceFileService;
+    File pdfFile = params.pdfFile;
+    if (sourceFileService != null) {
+      try {
+        pdfFile = await sourceFileService.persistFile(
+          params.pdfFile,
+          category: 'pdfs',
+        );
+      } catch (e) {
+        throw CreateNoteFromPdfException(
+          'Failed to store PDF for preview: ${e.toString()}',
+        );
+      }
+    }
+
+    if (!await pdfFile.exists()) {
+      throw CreateNoteFromPdfException('Stored PDF is not available');
+    }
+
     // Extract text from PDF
     String extractedText;
     try {
-      extractedText = await _pdfTextService.extractTextFromPdf(params.pdfFile);
+      extractedText = await _pdfTextService.extractTextFromPdf(pdfFile);
     } catch (e) {
       throw CreateNoteFromPdfException('Failed to extract text from PDF: ${e.toString()}');
     }
@@ -77,6 +114,26 @@ class CreateNoteFromPdfUseCase {
 
     final createdNote = await _noteRepository.create(note);
     final noteId = createdNote.id!;
+
+    final indexingService = _indexingService;
+    if (indexingService != null) {
+      try {
+        debugPrint('Indexing: pdf note $noteId');
+        await indexingService.indexNoteContent(
+          noteId: noteId,
+          title: createdNote.title,
+          content: cleanedContent,
+          sourceFilePath: pdfFile.path,
+          fileType: FileType.pdf,
+        );
+        debugPrint('Indexing: pdf note $noteId complete');
+      } catch (_) {
+        // Do not block note creation if indexing fails
+        debugPrint('Indexing: pdf note $noteId failed');
+      }
+    } else {
+      debugPrint('Indexing: pdf note $noteId skipped (service unavailable)');
+    }
 
     // Generate and save summary if enabled
     NoteSummary? createdSummary;
@@ -131,20 +188,32 @@ class CreateNoteFromPdfUseCase {
 
   Future<String> _generateSummaryText(String content) async {
     if (_aiEngine == null) {
-      return Summarizer.generateDetailedSummary(content);
+      return SummaryFormatter.ensureStructuredText(
+        Summarizer.generateDetailedSummary(content),
+      );
     }
 
     final result = await _aiEngine.generateSummary(text: content);
     final structuredText = SummaryFormatter.formatStructuredSummary(
       result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      includeSections: false,
+      includeDetailed: false,
     );
-    if (structuredText.isNotEmpty) return structuredText;
-
-    return result.detailedSummary.isNotEmpty
+    final fallback = structuredText.isNotEmpty
+        ? structuredText
+        : (result.detailedSummary.isNotEmpty
         ? result.detailedSummary
-        : Summarizer.generateDetailedSummary(content);
+        : Summarizer.generateDetailedSummary(content));
+
+    final hybridService = _hybridSummaryService;
+    if (hybridService != null && structuredText.isNotEmpty) {
+      final enhanced = await hybridService.enhanceSummary(structuredText);
+      if (enhanced != null) {
+        return SummaryFormatter.ensureStructuredText(enhanced);
+      }
+    }
+
+    return SummaryFormatter.ensureStructuredText(fallback);
   }
 
   /// Generate a title from the content

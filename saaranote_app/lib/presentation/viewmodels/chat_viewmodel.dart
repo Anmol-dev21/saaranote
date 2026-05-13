@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_session.dart';
@@ -14,6 +15,7 @@ class ChatViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool _isSending = false;
   String? _errorMessage;
+  bool _isDisposed = false;
 
   List<ChatSession> _sessions = [];
   ChatSession? _currentSession;
@@ -60,13 +62,18 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
+    if (_isSending) return;
 
     if (_currentSession == null) {
       await createNewSession();
     }
 
     final sessionId = _currentSession?.id;
-    if (sessionId == null) return;
+    if (sessionId == null) {
+      _errorMessage = 'Unable to start a chat session.';
+      _notifySafely();
+      return;
+    }
 
     final pendingMessage = ChatMessage(
       content: trimmed,
@@ -78,21 +85,25 @@ class ChatViewModel extends ChangeNotifier {
 
     _isSending = true;
     _errorMessage = null;
-    notifyListeners();
+    _notifySafely();
 
     try {
-      await _askQuestionUseCase.execute(
-        AskQuestionParams(
-          question: trimmed,
-          sessionId: sessionId,
-        ),
-      );
+      await _askQuestionUseCase
+          .execute(
+            AskQuestionParams(
+              question: trimmed,
+              sessionId: sessionId,
+            ),
+          )
+          .timeout(const Duration(seconds: 20));
       await _loadSessionsAndMessages();
+    } on TimeoutException {
+      _errorMessage = 'Request timed out. Try again.';
     } catch (e) {
       _errorMessage = 'Failed to send message: ${e.toString()}';
     } finally {
       _isSending = false;
-      notifyListeners();
+      _notifySafely();
     }
   }
 
@@ -119,11 +130,11 @@ class ChatViewModel extends ChangeNotifier {
     final sessionId = _currentSession?.id;
     if (sessionId == null) {
       _messages = [];
-      notifyListeners();
+      _notifySafely();
       return;
     }
     _messages = await _chatRepository.getMessages(sessionId);
-    notifyListeners();
+    _notifySafely();
   }
 
   String _buildSessionTitle() {
@@ -133,6 +144,17 @@ class ChatViewModel extends ChangeNotifier {
 
   void _setLoading(bool value) {
     _isLoading = value;
+    _notifySafely();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _notifySafely() {
+    if (_isDisposed) return;
     notifyListeners();
   }
 }

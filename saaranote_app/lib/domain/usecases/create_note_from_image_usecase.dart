@@ -1,16 +1,21 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../entities/note.dart';
 import '../entities/note_summary.dart';
 import '../entities/flashcard.dart';
 import '../repositories/note_repository.dart';
 import '../repositories/summary_repository.dart';
 import '../repositories/flashcard_repository.dart';
+import '../entities/file_metadata.dart';
 import '../../core/services/ocr_service.dart';
+import '../../core/services/source_file_service.dart';
 import '../../core/utils/text_processor.dart';
 import '../../core/utils/summarizer.dart';
 import '../../core/utils/key_point_extractor.dart';
 import '../../core/utils/summary_formatter.dart';
 import '../../core/ai_engine.dart';
+import '../../core/services/hybrid_summary_service.dart';
+import '../../core/services/document_indexing_service.dart';
 
 /// Use case for creating a note from an image using OCR, with automatic
 /// summarization and flashcard generation
@@ -20,6 +25,9 @@ class CreateNoteFromImageUseCase {
   final FlashcardRepository _flashcardRepository;
   final OcrService _ocrService;
   final AIEngine? _aiEngine;
+  final HybridSummaryService? _hybridSummaryService;
+  final DocumentIndexingService? _indexingService;
+  final SourceFileService? _sourceFileService;
 
   CreateNoteFromImageUseCase(
     this._noteRepository,
@@ -27,7 +35,10 @@ class CreateNoteFromImageUseCase {
     this._flashcardRepository,
     this._ocrService,
     this._aiEngine,
-  );
+    this._hybridSummaryService, [
+    this._indexingService,
+    this._sourceFileService,
+  ]);
 
   /// Execute the use case to create a note from an image
   /// 
@@ -42,25 +53,54 @@ class CreateNoteFromImageUseCase {
   /// 4. Generate and save summaries
   /// 5. Generate and save flashcards
   Future<CreateNoteFromImageResult> execute(CreateNoteFromImageParams params) async {
+    if (!await params.imageFile.exists()) {
+      throw CreateNoteFromImageException('Image file not found');
+    }
+    if (await params.imageFile.length() == 0) {
+      throw CreateNoteFromImageException('Image file is empty');
+    }
+
+    final sourceFileService = _sourceFileService;
+    File imageFile = params.imageFile;
+    if (sourceFileService != null) {
+      try {
+        imageFile = await sourceFileService.persistFile(
+          params.imageFile,
+          category: 'images',
+        );
+      } catch (e) {
+        throw CreateNoteFromImageException(
+          'Failed to store image for preview: ${e.toString()}',
+        );
+      }
+    }
+
+    if (!await imageFile.exists()) {
+      throw CreateNoteFromImageException('Stored image is not available');
+    }
+
     // Extract text from image using OCR
     String extractedText;
     try {
-      extractedText = await _ocrService.extractTextFromImage(params.imageFile);
+      extractedText = await _ocrService.extractTextFromImage(imageFile);
     } catch (e) {
       throw CreateNoteFromImageException('Failed to extract text from image: ${e.toString()}');
     }
 
     // Clean and validate the extracted text
-    final cleanedContent = TextProcessor.cleanText(extractedText);
-    
-    if (cleanedContent.isEmpty) {
-      throw CreateNoteFromImageException('No text found in the image');
+    var cleanedContent = TextProcessor.cleanText(extractedText);
+    if (cleanedContent.isEmpty && extractedText.trim().isNotEmpty) {
+      cleanedContent = extractedText.trim();
     }
 
-    // Validate minimum content length
     final wordCount = TextProcessor.countWords(cleanedContent);
-    if (wordCount < 3) {
-      throw CreateNoteFromImageException('Insufficient text extracted from image');
+    debugPrint(
+      'OCR: rawLength=${extractedText.length} cleanedLength=${cleanedContent.length} '
+      'wordCount=$wordCount',
+    );
+
+    if (cleanedContent.isEmpty) {
+      throw CreateNoteFromImageException('No text found in the image');
     }
 
     // Create the note
@@ -75,6 +115,26 @@ class CreateNoteFromImageUseCase {
 
     final createdNote = await _noteRepository.create(note);
     final noteId = createdNote.id!;
+
+    final indexingService = _indexingService;
+    if (indexingService != null) {
+      try {
+        debugPrint('Indexing: image note $noteId');
+        await indexingService.indexNoteContent(
+          noteId: noteId,
+          title: createdNote.title,
+          content: cleanedContent,
+          sourceFilePath: imageFile.path,
+          fileType: FileType.image,
+        );
+        debugPrint('Indexing: image note $noteId complete');
+      } catch (_) {
+        // Do not block note creation if indexing fails
+        debugPrint('Indexing: image note $noteId failed');
+      }
+    } else {
+      debugPrint('Indexing: image note $noteId skipped (service unavailable)');
+    }
 
     // Generate and save summary if enabled
     NoteSummary? createdSummary;
@@ -130,20 +190,32 @@ class CreateNoteFromImageUseCase {
 
   Future<String> _generateSummaryText(String content) async {
     if (_aiEngine == null) {
-      return Summarizer.generateDetailedSummary(content);
+      return SummaryFormatter.ensureStructuredText(
+        Summarizer.generateDetailedSummary(content),
+      );
     }
 
     final result = await _aiEngine.generateSummary(text: content);
     final structuredText = SummaryFormatter.formatStructuredSummary(
       result.structured,
-      includeSections: true,
-      includeDetailed: result.structured.detailedSummary.isNotEmpty,
+      includeSections: false,
+      includeDetailed: false,
     );
-    if (structuredText.isNotEmpty) return structuredText;
+    final fallback = structuredText.isNotEmpty
+        ? structuredText
+        : (result.detailedSummary.isNotEmpty
+            ? result.detailedSummary
+            : Summarizer.generateDetailedSummary(content));
 
-    return result.detailedSummary.isNotEmpty
-        ? result.detailedSummary
-        : Summarizer.generateDetailedSummary(content);
+    final hybridService = _hybridSummaryService;
+    if (hybridService != null && structuredText.isNotEmpty) {
+      final enhanced = await hybridService.enhanceSummary(structuredText);
+      if (enhanced != null) {
+        return SummaryFormatter.ensureStructuredText(enhanced);
+      }
+    }
+
+    return SummaryFormatter.ensureStructuredText(fallback);
   }
 
   /// Generate a title from the content if not provided

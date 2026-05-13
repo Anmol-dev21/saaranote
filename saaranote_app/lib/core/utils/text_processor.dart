@@ -4,52 +4,251 @@ class TextProcessor {
   static String cleanText(String rawText) {
     if (rawText.isEmpty) return '';
 
-    String cleaned = rawText;
+    var cleaned = _normalizeLineEndings(rawText);
 
-    // Normalize line endings
-    cleaned = cleaned.replaceAll('\r\n', '\n');
-    cleaned = cleaned.replaceAll('\r', '\n');
+    // Strip control characters and zero-width noise, preserve newlines.
+    cleaned = cleaned.replaceAll(RegExp(r'[\u0000-\u0008\u000B\u000C\u000E-\u001F]'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r'[\u200B-\u200D\uFEFF]'), '');
+    cleaned = cleaned.replaceAll('\u00ad', '');
 
-    // Remove common extraction artifacts (PDF/OCR)
-    cleaned = cleaned.replaceAll(RegExp(r'\$1'), ' ');
-    cleaned = cleaned.replaceAll(RegExp(r'\$\d+'), ' ');
-    cleaned = cleaned.replaceAll(RegExp(r'\f'), ' ');
+    cleaned = _removeOcrArtifacts(cleaned);
+
+    cleaned = _removeDuplicateLines(cleaned);
 
     // De-hyphenate line breaks (e.g., exam-\nple -> example)
-    cleaned = cleaned.replaceAll(RegExp(r'(\w)-\n(\w)'), r'$1$2');
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'(\w)[\-\u2010\u2011\u2013\u2014]\s*\n\s*(\w)'),
+      (match) => '${match.group(1)}${match.group(2)}',
+    );
 
-    // Merge broken lines when a sentence continues on the next line
-    cleaned = cleaned.replaceAll(RegExp(r'([^\n.!?])\n(?=[a-z])'), r'$1 ');
+    // Remove stray replacement characters from OCR.
+    cleaned = cleaned.replaceAll('\uFFFD', '');
 
-    // Normalize line breaks while preserving paragraph boundaries
-    cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n');
-    cleaned = cleaned.replaceAll('\n\n', ' __PARA_BREAK__ ');
-    cleaned = cleaned.replaceAll('\n', ' ');
-    cleaned = cleaned.replaceAll('__PARA_BREAK__', '\n\n');
+    // Merge lines inside paragraphs while preserving bullet lists.
+    cleaned = _mergeLinesPreserveParagraphs(cleaned);
+
+    // Normalize common punctuation issues
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'\s+([.,!?;:])'),
+      (match) => match.group(1) ?? '',
+    );
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'([.,!?;:]){2,}'),
+      (match) => match.group(1) ?? '',
+    );
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'[\-\u2010\u2013\u2014]{2,}'),
+      (_) => '-',
+    );
+
+    // Add space after punctuation if missing
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'([.,!?;:])([A-Za-z0-9])'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+
+    // Add space between long letter/number boundaries when missing.
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'([A-Za-z]{3,})(\d{2,})'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'(\d{2,})([A-Za-z]{3,})'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+
+    // Normalize quotes
+    cleaned = cleaned.replaceAll(RegExp(r'[\u201C\u201D]'), '"');
+    cleaned = cleaned.replaceAll(RegExp(r'[\u2018\u2019]'), "'");
+
+    // Fix camelCase merge from PDF/OCR (e.g., "textMerge" -> "text Merge")
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'([a-z]{3,})([A-Z][a-z]{2,})'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
 
     // Remove excessive whitespace (preserve paragraph breaks)
     cleaned = cleaned.replaceAll(RegExp(r'[ \t]+'), ' ');
     cleaned = cleaned.replaceAll(RegExp(r' *\n\n *'), '\n\n');
 
-    // Remove leading/trailing whitespace
-    cleaned = cleaned.trim();
-
-    // Normalize common punctuation issues
-    cleaned = cleaned.replaceAll(RegExp(r'\s+([.,!?;:])'), r'$1');
-    cleaned = cleaned.replaceAll(RegExp(r'([.,!?;:])+'), r'$1');
-
-    // Add space after punctuation if missing
-    cleaned = cleaned.replaceAll(RegExp(r'([.,!?;:])([A-Za-z])'), r'$1 $2');
-
-    // Normalize quotes
-    cleaned = cleaned.replaceAll(RegExp(r'["""]'), '"');
-    cleaned = cleaned.replaceAll(RegExp(r"[''']"), "'");
-
-    // Remove multiple spaces again after transformations
-    cleaned = cleaned.replaceAll(RegExp(r'[ \t]+'), ' ');
-    cleaned = cleaned.replaceAll(RegExp(r' *\n\n *'), '\n\n');
-
     return cleaned.trim();
+  }
+
+  static String _normalizeLineEndings(String text) {
+    var normalized = text.replaceAll('\r\n', '\n');
+    normalized = normalized.replaceAll('\r', '\n');
+    return normalized;
+  }
+
+  static String _removeOcrArtifacts(String text) {
+    var cleaned = text;
+
+    // Remove common OCR/PDF artifacts.
+    cleaned = cleaned.replaceAll(RegExp(r'\$\d+'), ' ');
+    cleaned = cleaned.replaceAll('\u00a0', ' ');
+    cleaned = cleaned.replaceAll('\f', ' ');
+    cleaned = cleaned.replaceAll(RegExp(r'[•·]{2,}'), ' ');
+    cleaned = cleaned.replaceAll(RegExp(r'[<>]{2,}'), ' ');
+
+    // Remove lines that are only noise characters.
+    cleaned = cleaned.replaceAll(
+      RegExp(r'^[\s|_`~^=]+$', multiLine: true),
+      '',
+    );
+    cleaned = cleaned.replaceAll(RegExp(r'[|_`~^=]{3,}'), ' ');
+    cleaned = cleaned.replaceAll(
+      RegExp(r'^[\s\-_=]{3,}$', multiLine: true),
+      '',
+    );
+
+    return cleaned;
+  }
+
+  static String _removeDuplicateLines(String text) {
+    final lines = _normalizeLineEndings(text).split('\n');
+    final buffer = <String>[];
+    String? lastNormalized;
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      final normalized = trimmed.toLowerCase();
+      if (trimmed.isEmpty) {
+        buffer.add('');
+        lastNormalized = null;
+        continue;
+      }
+
+      if (normalized == lastNormalized) {
+        continue;
+      }
+
+      buffer.add(trimmed);
+      lastNormalized = normalized;
+    }
+
+    return buffer.join('\n');
+  }
+
+  static String _mergeLinesPreserveParagraphs(String text) {
+    final paragraphs = text.split(RegExp(r'\n\s*\n'));
+    final merged = <String>[];
+
+    for (final paragraph in paragraphs) {
+      final lines = paragraph.split('\n');
+      final nonEmptyLines = lines
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .toList();
+      final preserveLineBreaks = _shouldPreserveLines(nonEmptyLines);
+      final buffer = <String>[];
+      String? running;
+
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) continue;
+
+        if (preserveLineBreaks) {
+          if (_isListLine(trimmed)) {
+            buffer.add(_normalizeListLine(trimmed));
+          } else {
+            buffer.add(trimmed);
+          }
+          continue;
+        }
+
+        if (_isListLine(trimmed)) {
+          if (running != null && running.trim().isNotEmpty) {
+            buffer.add(running.trim());
+            running = null;
+          }
+          buffer.add(_normalizeListLine(trimmed));
+          continue;
+        }
+
+        if (_isHeadingLine(trimmed)) {
+          if (running != null && running.trim().isNotEmpty) {
+            buffer.add(running.trim());
+            running = null;
+          }
+          buffer.add(trimmed);
+          continue;
+        }
+
+        if (running == null) {
+          running = trimmed;
+        } else {
+          if (_shouldStartNewLine(running, trimmed)) {
+            buffer.add(running.trim());
+            running = trimmed;
+            continue;
+          }
+
+          final needsSpace = !running.endsWith('-') && !running.endsWith('–');
+          running = '${running.trim()}${needsSpace ? ' ' : ''}$trimmed';
+        }
+      }
+
+      if (running != null && running.trim().isNotEmpty) {
+        buffer.add(running.trim());
+      }
+
+      if (buffer.isNotEmpty) {
+        merged.add(buffer.join('\n'));
+      }
+    }
+
+    return merged.join('\n\n');
+  }
+
+  static bool _shouldPreserveLines(List<String> lines) {
+    if (lines.length < 4) return false;
+    final totalLength = lines.fold<int>(0, (sum, line) => sum + line.length);
+    final averageLength = totalLength / lines.length;
+    final punctuationLines = lines.where(_endsWithSentencePunctuation).length;
+    final punctuationRatio = punctuationLines / lines.length;
+
+    return averageLength <= 55 && punctuationRatio < 0.4;
+  }
+
+  static bool _shouldStartNewLine(String previous, String next) {
+    if (_endsWithSentencePunctuation(previous) && _startsNewSentence(next)) {
+      return true;
+    }
+
+    if (previous.length <= 40 && next.length <= 40 && _startsNewSentence(next)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static bool _endsWithSentencePunctuation(String line) {
+    return RegExp(r'[.!?;:]$').hasMatch(line);
+  }
+
+  static bool _startsNewSentence(String line) {
+    return RegExp(r'^[A-Z0-9]').hasMatch(line);
+  }
+
+  static bool _isListLine(String line) {
+    return RegExp(r'^(\d+[\.)]|[\-\*\u2022])\s+').hasMatch(line);
+  }
+
+  static bool _isHeadingLine(String line) {
+    if (line.length > 80) return false;
+    if (_isListLine(line)) return false;
+
+    final wordCount = countWords(line);
+    if (wordCount == 0 || wordCount > 10) return false;
+
+    return isLikelyHeading(line);
+  }
+
+  static String _normalizeListLine(String line) {
+    return line.replaceAllMapped(
+      RegExp(r'^([\-\*\u2022])\s+'),
+      (match) => '- ',
+    );
   }
 
   /// Split text into sentences using punctuation and capitalization rules
@@ -64,7 +263,9 @@ class TextProcessor {
     final List<String> sentences = [];
     
     // Split by common sentence boundaries
-    final parts = cleaned.split(RegExp(r'(?<=[.!?])\s+(?=[A-Z])|(?:\n\s*\n)'));
+    final parts = cleaned.split(RegExp(
+      r'(?<=[.!?])\s+(?=[A-Z])|(?:\n\s*\n)|(?:\n(?=[\-\*\u2022]|\d+[\).]))',
+    ));
     
     for (final part in parts) {
       final trimmed = part.trim();

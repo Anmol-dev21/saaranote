@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sf_pdf;
 import 'package:pdf_render/pdf_render.dart' as pdf_render;
 import 'ocr_service.dart';
@@ -18,13 +20,16 @@ class PdfTextService {
     bool enableOcrFallback = true,
     int maxOcrPages = 3,
   }) async {
+    sf_pdf.PdfDocument? pdfDocument;
     try {
+      if (!await pdfFile.exists()) return '';
+      final length = await pdfFile.length();
+      if (length == 0) return '';
       final bytes = await pdfFile.readAsBytes();
-      final pdfDocument = sf_pdf.PdfDocument(inputBytes: bytes);
+      pdfDocument = sf_pdf.PdfDocument(inputBytes: bytes);
       final pageCount = pdfDocument.pages.count;
 
       if (pageCount == 0) {
-        pdfDocument.dispose();
         return '';
       }
 
@@ -38,8 +43,9 @@ class PdfTextService {
             endPageIndex: pageNum,
           );
 
-          if (pageText.isNotEmpty) {
-            textBuffer.write(pageText);
+          final normalized = pageText.replaceAll('\u00a0', ' ').trimRight();
+          if (normalized.isNotEmpty) {
+            textBuffer.write(normalized);
             if (pageNum < pageCount - 1) {
               textBuffer.write('\n\n');
             }
@@ -49,8 +55,6 @@ class PdfTextService {
         }
       }
 
-      pdfDocument.dispose();
-
       final extracted = textBuffer.toString().trim();
       if (extracted.isNotEmpty || _ocrService == null || !enableOcrFallback) {
         return extracted;
@@ -59,6 +63,8 @@ class PdfTextService {
       return await _extractTextWithOcr(pdfFile, maxPages: maxOcrPages);
     } catch (_) {
       return '';
+    } finally {
+      pdfDocument?.dispose();
     }
   }
 
@@ -66,40 +72,55 @@ class PdfTextService {
     if (_ocrService == null) return '';
 
     final buffer = StringBuffer();
+    pdf_render.PdfDocument? doc;
 
     try {
-      final doc = await pdf_render.PdfDocument.openFile(pdfFile.path);
+      doc = await pdf_render.PdfDocument.openFile(pdfFile.path);
       final pageCount = doc.pageCount;
       final pageLimit = pageCount < maxPages ? pageCount : maxPages;
 
       for (int pageNumber = 1; pageNumber <= pageLimit; pageNumber++) {
         final page = await doc.getPage(pageNumber);
+        try {
+          final maxSide = page.width > page.height ? page.width : page.height;
+          final baseScale = maxSide < 900
+              ? 3.0
+              : (maxSide < 1400 ? 2.5 : 2.0);
+          final maxRenderDimension = 2200.0;
+          final maxScale = maxRenderDimension / maxSide;
+          final scale = math.min(baseScale, maxScale);
+          final renderWidth = (page.width * scale).toInt();
+          final renderHeight = (page.height * scale).toInt();
 
-        final renderWidth = (page.width * 2).toInt();
-        final renderHeight = (page.height * 2).toInt();
+          final pageImage = await page.render(
+            width: renderWidth,
+            height: renderHeight,
+          );
 
-        final pageImage = await page.render(
-          width: renderWidth,
-          height: renderHeight,
-        );
+          try {
+            final pageText = await _ocrService.extractTextFromImageBytes(
+              pageImage.pixels,
+              pageImage.width,
+              pageImage.height,
+            ).timeout(const Duration(seconds: 12));
 
-        final pageText = await _ocrService.extractTextFromImageBytes(
-          pageImage.pixels,
-          pageImage.width,
-          pageImage.height,
-        );
-
-        if (pageText.trim().isNotEmpty) {
-          buffer.write(pageText.trim());
-          buffer.write('\n\n');
+            if (pageText.trim().isNotEmpty) {
+              buffer.write(pageText.trim());
+              buffer.write('\n\n');
+            }
+          } on TimeoutException {
+            // Skip slow OCR pages to keep UI responsive.
+          } finally {
+            pageImage.dispose();
+          }
+        } finally {
+          // PdfPage has no dispose; PdfDocument disposal cleans up pages.
         }
-
-        pageImage.dispose();
       }
-
-      await doc.dispose();
     } catch (_) {
       return '';
+    } finally {
+      await doc?.dispose();
     }
 
     return buffer.toString().trim();

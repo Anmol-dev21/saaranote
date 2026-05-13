@@ -414,7 +414,7 @@ class NoteEditorViewModel extends ChangeNotifier {
         ),
       ],
       style: StrokeStyle(
-        color: '#${_penColor.value.toRadixString(16).padLeft(8, '0').substring(2)}',
+        color: '#${_penColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}',
         width: _penWidth,
         type: _strokeType,
         opacity: _penOpacity,
@@ -653,10 +653,10 @@ class NoteEditorViewModel extends ChangeNotifier {
       underline: _isUnderline,
       fontSize: _fontSize != 16.0 ? _fontSize : null,
       textColor: _textColor != null
-          ? '#${_textColor!.value.toRadixString(16).padLeft(8, '0').substring(2)}'
+          ? '#${_textColor!.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}'
           : null,
       highlightColor: _highlightColor != null
-          ? '#${_highlightColor!.value.toRadixString(16).padLeft(8, '0').substring(2)}'
+          ? '#${_highlightColor!.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}'
           : null,
     );
   }

@@ -91,7 +91,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.4),
+            color: theme.dividerColor.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -156,8 +156,20 @@ class _AiChatScreenState extends State<AiChatScreen> {
             backgroundColor: theme.colorScheme.errorContainer,
             textColor: theme.colorScheme.onErrorContainer,
           ),
+          AppSpacing.vGapXs,
+          TextButton.icon(
+            onPressed: () => chat.refresh(),
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry loading chats'),
+          ),
         ],
         AppSpacing.vGapLg,
+        if (!hasMessages)
+          AppEmptyState(
+            icon: Icons.chat_bubble_outline,
+            title: 'Start your first chat',
+            message: 'Ask a question to search your notes and summaries.',
+          ),
         if (hasMessages) _buildMessageList(context, chat.messages),
         if (chat.isSending) ...[
           AppSpacing.vGapXs,
@@ -189,7 +201,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final alignment = isUser
         ? Alignment.centerRight
         : Alignment.centerLeft;
-    final content = _cleanMessageContent(message);
+    final assistantMeta = _extractAssistantContent(message);
+    final content = assistantMeta.content;
 
     return Padding(
       padding: AppSpacing.verticalXs,
@@ -198,6 +211,24 @@ class _AiChatScreenState extends State<AiChatScreen> {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
+          if (!isUser && assistantMeta.isNoResults) ...[
+            AppInfoBanner(
+              message: 'No close matches found. Try a keyword from the note.',
+              icon: Icons.search_off,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              textColor: theme.colorScheme.onSurfaceVariant,
+            ),
+            AppSpacing.vGapXs,
+          ],
+          if (!isUser && assistantMeta.isLowConfidence) ...[
+            AppInfoBanner(
+              message: 'Low confidence answer. Consider rephrasing your question.',
+              icon: Icons.warning_amber_outlined,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              textColor: theme.colorScheme.onSurfaceVariant,
+            ),
+            AppSpacing.vGapXs,
+          ],
           _buildMessageHeader(context, message),
           AppSpacing.vGapXs,
           Align(
@@ -212,7 +243,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   color: bubbleColor,
                   borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   border: Border.all(
-                    color: theme.dividerColor.withOpacity(0.4),
+                    color: theme.dividerColor.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Text(
@@ -244,7 +275,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       height: 28,
       width: 28,
       decoration: BoxDecoration(
-        color: avatarColor.withOpacity(0.15),
+        color: avatarColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(9),
       ),
       child: Center(
@@ -316,7 +347,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   Widget _buildTypingIndicator(BuildContext context) {
     final theme = Theme.of(context);
-    final dotColor = theme.colorScheme.onSurfaceVariant.withOpacity(0.6);
+    final dotColor = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
 
     return Row(
       children: [
@@ -327,7 +358,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             border: Border.all(
-              color: theme.dividerColor.withOpacity(0.4),
+              color: theme.dividerColor.withValues(alpha: 0.4),
             ),
           ),
           child: Row(
@@ -339,7 +370,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               _buildTypingDot(dotColor),
               AppSpacing.hGapSm,
               Text(
-                'Typing...',
+                'Generating answer...',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -362,14 +393,35 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  String _cleanMessageContent(ChatMessage message) {
+  _AssistantContent _extractAssistantContent(ChatMessage message) {
     if (message.role != MessageRole.assistant) {
-      return message.content;
+      return _AssistantContent(
+        content: message.content,
+        isLowConfidence: false,
+        isNoResults: false,
+      );
     }
+
+    var content = message.content;
     const marker = '\n\nSOURCES';
-    final index = message.content.indexOf(marker);
-    if (index == -1) return message.content;
-    return message.content.substring(0, index).trim();
+    final index = content.indexOf(marker);
+    if (index != -1) {
+      content = content.substring(0, index).trim();
+    }
+
+    final lowConfidencePrefix = RegExp(r'^LOW CONFIDENCE:\s*', caseSensitive: false);
+    final isLowConfidence = lowConfidencePrefix.hasMatch(content.trim());
+    content = content.replaceFirst(lowConfidencePrefix, '').trim();
+
+    final isNoResults = content
+        .toLowerCase()
+        .contains('no relevant information found in your notes');
+
+    return _AssistantContent(
+      content: content,
+      isLowConfidence: isLowConfidence,
+      isNoResults: isNoResults,
+    );
   }
 
   String _statusLabel(ChatMessage message) {
@@ -379,7 +431,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
       case MessageStatus.error:
         return 'Error';
       case MessageStatus.sent:
-      default:
         return message.role == MessageRole.user ? 'Sent' : 'Answered';
     }
   }
@@ -423,7 +474,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           border: Border.all(
-            color: theme.dividerColor.withOpacity(0.4),
+            color: theme.dividerColor.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -433,7 +484,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               height: 32,
               width: 32,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -508,7 +559,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -563,7 +614,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surface,
           border: Border(
             top: BorderSide(
-              color: theme.dividerColor.withOpacity(0.5),
+              color: theme.dividerColor.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -584,13 +635,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.4),
+                      color: theme.dividerColor.withValues(alpha: 0.4),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.4),
+                      color: theme.dividerColor.withValues(alpha: 0.4),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -707,5 +758,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
       SnackBar(content: Text(message)),
     );
   }
+}
+
+class _AssistantContent {
+  final String content;
+  final bool isLowConfidence;
+  final bool isNoResults;
+
+  const _AssistantContent({
+    required this.content,
+    required this.isLowConfidence,
+    required this.isNoResults,
+  });
 }
 

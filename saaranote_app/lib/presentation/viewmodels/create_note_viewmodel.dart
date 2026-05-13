@@ -34,6 +34,7 @@ class CreateNoteViewModel extends ChangeNotifier {
   List<Flashcard> _createdFlashcards = [];
   String? _extractedText;
   int? _wordCount;
+  bool _isDisposed = false;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -67,7 +68,7 @@ class CreateNoteViewModel extends ChangeNotifier {
     _createdFlashcards = [];
     _extractedText = null;
     _wordCount = null;
-    notifyListeners();
+    _notifySafely();
 
     try {
       final params = CreateNoteFromTextParams(
@@ -97,13 +98,13 @@ class CreateNoteViewModel extends ChangeNotifier {
       _createdSummary = result.summary;
       _createdFlashcards = result.flashcards;
       _isLoading = false;
-      notifyListeners();
+      _notifySafely();
 
       return true;
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Failed to create note: ${e.toString()}';
-      notifyListeners();
+      _notifySafely();
       return false;
     }
   }
@@ -123,7 +124,7 @@ class CreateNoteViewModel extends ChangeNotifier {
     _createdFlashcards = [];
     _extractedText = null;
     _wordCount = null;
-    notifyListeners();
+    _notifySafely();
 
     try {
       final params = CreateNoteFromImageParams(
@@ -142,13 +143,13 @@ class CreateNoteViewModel extends ChangeNotifier {
       _extractedText = result.extractedText;
       _wordCount = result.wordCount;
       _isLoading = false;
-      notifyListeners();
+      _notifySafely();
 
       return true;
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Failed to create note from image: ${e.toString()}';
-      notifyListeners();
+      _notifySafely();
       return false;
     }
   }
@@ -168,7 +169,7 @@ class CreateNoteViewModel extends ChangeNotifier {
     _createdFlashcards = [];
     _extractedText = null;
     _wordCount = null;
-    notifyListeners();
+    _notifySafely();
 
     try {
       final params = CreateNoteFromPdfParams(
@@ -187,13 +188,13 @@ class CreateNoteViewModel extends ChangeNotifier {
       _extractedText = result.extractedText;
       _wordCount = result.wordCount;
       _isLoading = false;
-      notifyListeners();
+      _notifySafely();
 
       return true;
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Failed to create note from PDF: ${e.toString()}';
-      notifyListeners();
+      _notifySafely();
       return false;
     }
   }
@@ -207,12 +208,23 @@ class CreateNoteViewModel extends ChangeNotifier {
     _createdFlashcards = [];
     _extractedText = null;
     _wordCount = null;
-    notifyListeners();
+    _notifySafely();
   }
 
   /// Clear error message
   void clearError() {
     _errorMessage = null;
+    _notifySafely();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _notifySafely() {
+    if (_isDisposed) return;
     notifyListeners();
   }
 

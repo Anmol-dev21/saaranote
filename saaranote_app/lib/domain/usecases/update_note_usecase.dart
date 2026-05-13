@@ -1,12 +1,15 @@
 import '../entities/note.dart';
 import '../entities/rich_text_content.dart' as domain;
+import '../entities/file_metadata.dart';
 import '../repositories/note_repository.dart';
+import '../../core/services/document_indexing_service.dart';
 
 /// Use case for updating an existing note
 class UpdateNoteUseCase {
   final NoteRepository _noteRepository;
+  final DocumentIndexingService? _indexingService;
 
-  UpdateNoteUseCase(this._noteRepository);
+  UpdateNoteUseCase(this._noteRepository, [this._indexingService]);
 
   /// Execute the use case to update a note
   /// 
@@ -31,7 +34,23 @@ class UpdateNoteUseCase {
       updatedAt: DateTime.now(),
     );
 
-    return await _noteRepository.update(updatedNote);
+    final saved = await _noteRepository.update(updatedNote);
+
+    final indexingService = _indexingService;
+    if (indexingService != null) {
+      try {
+        await indexingService.indexNoteContent(
+          noteId: saved.id ?? params.noteId,
+          title: saved.title,
+          content: saved.content,
+          fileType: FileType.note,
+        );
+      } catch (_) {
+        // Do not block note updates if indexing fails
+      }
+    }
+
+    return saved;
   }
 }
 

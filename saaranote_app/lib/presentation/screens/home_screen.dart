@@ -202,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: accent.withOpacity(0.15),
+                  color: accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.note_outlined, color: accent, size: 20),
@@ -425,6 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => const AddNoteScreen()),
     ).then((created) {
+      if (!context.mounted) return;
       if (created == true) {
         context.read<NoteViewModel>().refresh();
       }
@@ -436,6 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => const NoteEditorScreen()),
     ).then((_) {
+      if (!context.mounted) return;
       context.read<NoteViewModel>().refresh();
     });
   }

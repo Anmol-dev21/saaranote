@@ -3,6 +3,8 @@ import '../repositories/chat_repository.dart';
 import '../../core/services/generation_service.dart';
 import '../../core/services/offline_qa_service.dart';
 import '../../core/services/retrieval_service.dart';
+import '../repositories/index_repository.dart';
+import 'reindex_notes_usecase.dart';
 
 /// Use case for asking a question to the AI assistant
 class AskQuestionUseCase {
@@ -11,6 +13,8 @@ class AskQuestionUseCase {
   final GenerationService _generationService;
   final QueryProcessor _queryProcessor;
   final OfflineQaService? _offlineQaService;
+  final IndexRepository? _indexRepository;
+  final ReindexNotesUseCase? _reindexNotesUseCase;
 
   AskQuestionUseCase({
     required ChatRepository chatRepository,
@@ -18,11 +22,15 @@ class AskQuestionUseCase {
     required GenerationService generationService,
     required QueryProcessor queryProcessor,
     OfflineQaService? offlineQaService,
+    IndexRepository? indexRepository,
+    ReindexNotesUseCase? reindexNotesUseCase,
   })  : _chatRepository = chatRepository,
         _retrievalService = retrievalService,
         _generationService = generationService,
         _queryProcessor = queryProcessor,
-        _offlineQaService = offlineQaService;
+      _offlineQaService = offlineQaService,
+      _indexRepository = indexRepository,
+      _reindexNotesUseCase = reindexNotesUseCase;
 
   /// Execute the use case
   Future<ChatMessage> execute(AskQuestionParams params) async {
@@ -37,7 +45,9 @@ class AskQuestionUseCase {
     );
 
     try {
-      final response = _offlineQaService != null
+        await _ensureIndexReady();
+
+        final response = _offlineQaService != null
           ? await _offlineQaService.answer(query: params.question)
           : await _generateWithLegacyPipeline(params.question);
 
@@ -63,6 +73,22 @@ class AskQuestionUseCase {
         ),
         params.sessionId,
       );
+    }
+  }
+
+  Future<void> _ensureIndexReady() async {
+    final indexRepository = _indexRepository;
+    final reindexUseCase = _reindexNotesUseCase;
+    if (indexRepository == null || reindexUseCase == null) return;
+
+    try {
+      final stats = await indexRepository.getIndexStats();
+      final totalChunks = stats['totalChunks'] as int? ?? 0;
+      if (totalChunks == 0) {
+        await reindexUseCase.execute();
+      }
+    } catch (_) {
+      // Ignore indexing failures; chat can still respond with limited context.
     }
   }
 

@@ -11,6 +11,9 @@ abstract class FileOrganizationRepository {
   /// Get file metadata by path
   Future<FileMetadata?> getFileByPath(String path);
 
+  /// Get file metadata by related note id
+  Future<FileMetadata?> getFileByRelatedNoteId(String relatedNoteId);
+
   /// Get all files
   Future<List<FileMetadata>> getAllFiles();
 

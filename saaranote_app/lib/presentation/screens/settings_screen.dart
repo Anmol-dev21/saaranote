@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/design_system/app_components.dart';
@@ -6,6 +7,7 @@ import '../../core/design_system/app_typography.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import 'ai_chat_screen.dart';
 import 'library_screen.dart';
+import 'debug_tools_screen.dart';
 
 /// Settings screen for profile and preferences
 class SettingsScreen extends StatelessWidget {
@@ -155,6 +157,27 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (kDebugMode) ...[
+                  AppSpacing.vGapLg,
+                  const AppSectionHeader(title: 'Developer'),
+                  _buildSettingsGroup(
+                    context,
+                    tiles: [
+                      _buildNavigationTile(
+                        context,
+                        icon: Icons.bug_report_outlined,
+                        title: 'Debug tools',
+                        subtitle: 'OCR, indexing, and retrieval diagnostics',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DebugToolsScreen(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 AppSpacing.vGapXl,
                 Center(
                   child: Text(
@@ -184,7 +207,7 @@ class SettingsScreen extends StatelessWidget {
             height: 52,
             width: 52,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.12),
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -237,7 +260,7 @@ class SettingsScreen extends StatelessWidget {
           if (index.isOdd) {
             return Divider(
               height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.4),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
             );
           }
           return tiles[index ~/ 2];
@@ -273,6 +296,37 @@ class SettingsScreen extends StatelessWidget {
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => _showComingSoon(context),
+    );
+  }
+
+  Widget _buildNavigationTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return ListTile(
+      leading: Container(
+        height: 36,
+        width: 36,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+      ),
+      title: Text(title, style: theme.textTheme.titleSmall),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 
@@ -453,7 +507,6 @@ class SettingsScreen extends StatelessWidget {
       case ThemeMode.dark:
         return 'Dark';
       case ThemeMode.system:
-      default:
         return 'System';
     }
   }

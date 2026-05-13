@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Additional safe ignores for Android-only workspace optimization
+# Ignore Flutter build internals and Gradle caches
+.dart_tool/flutter_build/
+android/.gradle/
+
+# Ignore generated APK/AAB outputs and temporary logs
+*.apk
+*.aab
+*.log
