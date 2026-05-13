@@ -4,7 +4,7 @@ A production-ready Flutter application for intelligent note-taking with OCR, PDF
 
 ## Overview
 
-SaaraNote is designed as an offline-first study companion that helps students and professionals capture, organize, and review information efficiently. AI processing happens on-device using Google ML Kit and custom services, ensuring privacy and functionality without internet connectivity. The app now includes a full Material 3 design system, a rich text and drawing editor, and an offline Q&A pipeline over local notes.
+SaaraNote is designed as an offline-first study companion that helps students and professionals capture, organize, and review information efficiently. AI processing happens on-device using Google ML Kit and custom services, with optional local LLM enhancement (Ollama) if available, ensuring privacy and functionality without internet connectivity. The app now includes a full Material 3 design system, a rich text and drawing editor, and an offline Q&A pipeline over local notes.
 
 ## Features
 
@@ -21,17 +21,25 @@ SaaraNote is designed as an offline-first study companion that helps students an
 - **Smart Filtering** - Sort by Recent or Oldest creation date
 - **Quick Navigation** - Tap any note to view details with summaries and flashcards
 - **File Organization System** - Backend for auto-organizing PDFs/images by subject
+- **Folders & Tags (Coming Soon)** - Library UI is wired with tabs for future organization
 
 ### 🧠 Intelligent Features
 - **Extractive Summarization** - Automatically generates concise summaries from note content
+- **Hybrid Summaries (Optional)** - Enhances structured summaries with a local Ollama model
 - **Flashcard Generation** - AI-powered question-answer pairs for effective revision
 - **Key Point Extraction** - Identifies and extracts important concepts
 - **Offline Q&A** - Ask questions about your notes using local retrieval
+- **Document Indexing** - Chunks and indexes notes for offline retrieval with SQLite FTS
 
 ### 💬 AI Chat & Citations
 - **Chat Sessions** - Start new conversations and keep history locally
 - **Source Citations** - Answers include excerpts linked to indexed notes
 - **Offline by Design** - No external API calls or network dependency
+
+### 🧪 Diagnostics & Debug Tools
+- **OCR Debugging** - Compare original vs preprocessed OCR output
+- **Indexing Tools** - Inspect and rebuild retrieval indexes
+- **Retrieval Debugging** - Inspect retrieval results and self-test Q&A
 
 ### 📤 Export & Sharing
 - **PDF Export** - Generate formatted PDF documents containing:
@@ -77,6 +85,8 @@ SaaraNote is designed as an offline-first study companion that helps students an
 - **Custom Algorithms**:
   - `TextProcessor` - Content cleaning and normalization
   - `Summarizer` - Extractive summarization using sentence scoring
+  - `HybridSummaryService` - Optional LLM-enhanced structured summaries
+  - `LlmService` - Local Ollama summary enhancement client
   - `KeyPointExtractor` - Question-answer pair generation
   - `RetrievalService` - Local retrieval over indexed notes
   - `OfflineQaService` - On-device question answering pipeline
@@ -89,6 +99,8 @@ SaaraNote is designed as an offline-first study companion that helps students an
 ### Other Dependencies
 - **image_picker** (^1.1.2) - Camera and gallery access
 - **file_picker** (^8.1.4) - File system navigation
+- **http** (^1.2.2) - Local LLM calls (Ollama)
+- **image** (^4.2.0) - OCR image preprocessing
 - **google_fonts** (^8.0.2) - App typography (Inter)
 
 ## Architecture
@@ -250,6 +262,8 @@ CREATE VIRTUAL TABLE document_chunks_fts USING fts5(
 )
 ```
 
+FTS5 is used when available, with a fallback to FTS4 on devices without FTS5 support.
+
 ```sql
 CREATE TABLE chat_sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -305,6 +319,20 @@ flutter pub get
 # Verify installation
 flutter doctor
 ```
+
+### Optional: Local LLM Summaries (Ollama)
+
+SaaraNote can enhance structured summaries using a local Ollama model if it is running.
+
+```bash
+# Install Ollama and pull the model
+ollama pull qwen2.5:3b
+
+# Start the local server (defaults to http://localhost:11434)
+ollama serve
+```
+
+The app will automatically try `localhost:11434` and Android emulator `10.0.2.2:11434`.
 
 ### Running the App
 
@@ -389,6 +417,7 @@ dependencies:
 CreateNoteFromTextUseCase
   → TextProcessor.cleanText()
   → Summarizer.generateSummary()
+  → HybridSummaryService.enhanceSummary() (optional, if local LLM available)
   → KeyPointExtractor.extractFlashcardPairs()
   → NoteRepository.create()
   → SummaryRepository.create()
@@ -454,7 +483,7 @@ User asks a question
   → ChatViewModel.sendMessage()
   → AskQuestionUseCase.execute()
   → RetrievalService uses SQLite FTS keyword search
-  → OfflineQaService/GenerationService produce response
+  → OfflineQaService reranks context and generates response
   → ChatRepository stores messages and sources
 ```
 
@@ -547,6 +576,7 @@ flutter build apk
 - **No Analytics**: No tracking or telemetry
 - **Local Storage**: All data in SQLite on device
 - **On-Device AI**: OCR and summarization happen locally
+- **Optional Local LLM**: Uses local Ollama only if available
 
 ## Documentation
 

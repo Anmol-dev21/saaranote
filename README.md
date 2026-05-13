@@ -1,12 +1,12 @@
 # SaaraNote
 
-SaaraNote is an intelligent note-taking and study companion app built with Flutter. It turns text, images, and PDFs into organized notes with auto-generated summaries and flashcards, and now adds rich text, drawing, offline Q&A, and a full design system for a consistent UI.
+SaaraNote is an intelligent note-taking and study companion app built with Flutter. It turns text, images, and PDFs into organized notes with auto-generated summaries and flashcards, and adds rich text, drawing, offline Q&A, optional local LLM-enhanced summaries, and a full design system for a consistent UI.
 
 ## Features
 
 - **Smart Note Creation** - Create notes from typed text, camera images (OCR), or imported PDF files
 - **Rich Text + Drawing Notes** - Format text, sketch with pen/highlighter, or combine both in hybrid notes
-- **Intelligent Summarization** - Automatic extractive summarization of note content
+- **Intelligent Summarization** - Automatic extractive summaries with optional local LLM enhancement
 - **Flashcard Generation** - AI-powered flashcard creation for effective revision
 - **Offline Q&A & AI Chat** - Ask questions about your notes with local retrieval and cited sources
 - **Advanced Search** - Full-text search across all notes with instant results
@@ -16,15 +16,17 @@ SaaraNote is an intelligent note-taking and study companion app built with Flutt
 - **Design System** - Material 3 theming with consistent typography, spacing, and components
 - **Offline-First** - All processing happens on-device; no internet required
 - **Cross-Platform** - Built with Flutter for Android, iOS, and more
+- **Debug Tools** - OCR, indexing, and retrieval diagnostics for development
 
 ## Tech Stack
 
 **Frontend Framework:** Flutter/Dart  
 **Architecture:** Clean Architecture with MVVM pattern  
 **State Management:** Provider  
-**Local Database:** SQLite (sqflite)  
-**OCR Engine:** Google ML Kit Text Recognition  
+**Local Database:** SQLite (sqflite) with FTS for retrieval  
+**OCR Engine:** Google ML Kit Text Recognition + image preprocessing  
 **PDF Processing:** syncfusion_flutter_pdf (extraction), pdf (generation), pdf_render (fallback rendering)  
+**Local LLM (Optional):** Ollama (qwen2.5:3b) over HTTP for summary enhancement  
 **Typography:** Google Fonts (Inter)  
 **Settings:** shared_preferences  
 
@@ -35,7 +37,7 @@ SaaraNote follows **Clean Architecture** principles with clear separation of con
 - **Domain Layer** - Business entities, repository interfaces, and use cases
 - **Data Layer** - Repository implementations and local data sources (SQLite)
 - **Presentation Layer** - ViewModels (MVVM) and UI screens
-- **Core Services** - OCR, PDF, rich text, drawing, retrieval, offline Q&A
+- **Core Services** - OCR, PDF, rich text, drawing, document indexing, retrieval, offline Q&A
 - **Design System** - Theme, typography, spacing, and reusable UI components
 
 This architecture ensures maintainability, testability, and scalability while keeping the codebase organized and easy to understand.
@@ -77,6 +79,20 @@ flutter pub get
 # Run the app
 flutter run
 ```
+
+### Optional: Local LLM Summaries (Ollama)
+
+SaaraNote can enhance summaries using a local Ollama model if it is running.
+
+```bash
+# Install Ollama and pull the model
+ollama pull qwen2.5:3b
+
+# Start the local server (defaults to http://localhost:11434)
+ollama serve
+```
+
+The app will automatically try `localhost:11434` and Android emulator `10.0.2.2:11434`.
 
 ### Build Release APK
 
@@ -127,7 +143,7 @@ saaranote/
 - [ ] Note sharing and collaboration
 - [ ] Voice note recording and transcription
 - [ ] Custom theme palettes and typography presets
-- [ ] Tags and categories for better organization
+- [ ] Folders/tags UI and organization rules editor
 - [ ] Export to multiple formats (Markdown, HTML)
 
 ## License
